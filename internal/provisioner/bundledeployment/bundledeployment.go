@@ -1,11 +1,9 @@
 package bundledeployment
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 	"sync"
 
@@ -13,7 +11,6 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
-	"helm.sh/helm/v3/pkg/postrender"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -24,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
-	apimachyaml "k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -102,10 +98,9 @@ func SetupProvisioner(mgr manager.Manager, opts ...Option) error {
 		return fmt.Errorf("invalid configuration: %v", err)
 	}
 
-	controllerName := fmt.Sprintf("controller.bundledeployment.%s", bd.provisionerID)
+	controllerName := fmt.Sprintf("controller.bundle.%s", bd.provisionerID)
 	l := mgr.GetLogger().WithName(controllerName)
 	controller, err := ctrl.NewControllerManagedBy(mgr).
-		Named(controllerName).
 		For(&rukpakv1alpha1.BundleDeployment{}, builder.WithPredicates(
 			util.BundleDeploymentProvisionerFilter(bd.provisionerID)),
 		).
@@ -269,14 +264,7 @@ func (p *bundledeploymentProvisioner) reconcile(ctx context.Context, bd *rukpakv
 		return ctrl.Result{}, err
 	}
 
-	post := &postrenderer{
-		labels: map[string]string{
-			util.CoreOwnerKindKey: rukpakv1alpha1.BundleDeploymentKind,
-			util.CoreOwnerNameKey: bd.GetName(),
-		},
-	}
-
-	rel, state, err := p.getReleaseState(cl, bd, chrt, values, post)
+	rel, state, err := p.getReleaseState(cl, bd, chrt, values)
 	if err != nil {
 		meta.SetStatusCondition(&bd.Status.Conditions, metav1.Condition{
 			Type:    rukpakv1alpha1.TypeInstalled,
@@ -312,13 +300,7 @@ func (p *bundledeploymentProvisioner) reconcile(ctx context.Context, bd *rukpakv
 			return ctrl.Result{}, err
 		}
 	case stateNeedsUpgrade:
-		rel, err = cl.Upgrade(bd.Name, p.releaseNamespace, chrt, values,
-			// To be refactored issue https://github.com/operator-framework/rukpak/issues/534
-			func(upgrade *action.Upgrade) error {
-				post.cascade = upgrade.PostRenderer
-				upgrade.PostRenderer = post
-				return nil
-			})
+		rel, err = cl.Upgrade(bd.Name, p.releaseNamespace, chrt, values)
 		if err != nil {
 			if isResourceNotFoundErr(err) {
 				err = errRequiredResourceNotFound{err}
@@ -418,11 +400,11 @@ func (p *bundledeploymentProvisioner) reconcileOldBundles(ctx context.Context, c
 	var (
 		errors []error
 	)
-	for i := range allBundles.Items {
-		if allBundles.Items[i].GetName() == currBundle.GetName() {
+	for _, bundle := range allBundles.Items {
+		if bundle.GetName() == currBundle.GetName() {
 			continue
 		}
-		if err := p.cl.Delete(ctx, &allBundles.Items[i]); err != nil {
+		if err := p.cl.Delete(ctx, &bundle); err != nil {
 			errors = append(errors, err)
 			continue
 		}
@@ -439,7 +421,7 @@ const (
 	stateError        releaseState = "Error"
 )
 
-func (p *bundledeploymentProvisioner) getReleaseState(cl helmclient.ActionInterface, obj metav1.Object, chrt *chart.Chart, values chartutil.Values, post *postrenderer) (*release.Release, releaseState, error) {
+func (p *bundledeploymentProvisioner) getReleaseState(cl helmclient.ActionInterface, obj metav1.Object, chrt *chart.Chart, values chartutil.Values) (*release.Release, releaseState, error) {
 	currentRelease, err := cl.Get(obj.GetName())
 	if err != nil && !errors.Is(err, driver.ErrReleaseNotFound) {
 		return nil, stateError, err
@@ -497,34 +479,4 @@ func isResourceNotFoundErr(err error) bool {
 	//   does not wrap meta.NoKindMatchError, so we need to fallback to
 	//   the use of string comparisons for now.
 	return strings.Contains(err.Error(), "no matches for kind")
-}
-
-type postrenderer struct {
-	labels  map[string]string
-	cascade postrender.PostRenderer
-}
-
-func (p *postrenderer) Run(renderedManifests *bytes.Buffer) (*bytes.Buffer, error) {
-	var buf bytes.Buffer
-	dec := apimachyaml.NewYAMLOrJSONDecoder(renderedManifests, 1024)
-	for {
-		obj := unstructured.Unstructured{}
-		err := dec.Decode(&obj)
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		obj.SetLabels(p.labels)
-		b, err := obj.MarshalJSON()
-		if err != nil {
-			return nil, err
-		}
-		buf.Write(b)
-	}
-	if p.cascade != nil {
-		return p.cascade.Run(&buf)
-	}
-	return &buf, nil
 }

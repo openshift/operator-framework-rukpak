@@ -81,7 +81,7 @@ generate: controller-gen ## Generate code and manifests
 		paths=./internal/provisioner/bundle/... \
 		paths=./internal/provisioner/bundledeployment/... \
 		paths=./internal/provisioner/helm/... \
-			output:stdout > ./manifests/provisioners/helm/resources/cluster_role.yaml
+		    output:stdout > ./manifests/provisioners/helm/resources/cluster_role.yaml
 
 verify: tidy fmt generate ## Verify the current code generation and lint
 	git diff --exit-code
