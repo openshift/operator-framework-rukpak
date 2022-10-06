@@ -133,6 +133,9 @@ image-registry: ## Setup in-cluster image registry
 local-git: ## Setup in-cluster git repository
 	./test/tools/git/setup_git.sh ${KIND_CLUSTER_NAME}
 
+local-git: ## Setup in-cluster git repository
+	./tools/git/setup_git.sh ${KIND_CLUSTER_NAME}
+
 ###################
 # Install and Run #
 ###################
