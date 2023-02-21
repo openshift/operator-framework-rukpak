@@ -211,7 +211,7 @@ kind-load: kind ## Loads the currently constructed image onto the cluster
 	$(KIND) load docker-image $(IMAGE) --name $(KIND_CLUSTER_NAME)
 
 registry-load-bundles: ## Load selected e2e testdata container images created in kind-load-bundles into registry
-	$(CONTAINER_RUNTIME) tag testdata/bundles/plain-v0:valid $(DNS_NAME):5000/bundles/plain-v0:valid
+	$(CONTAINER_RUNTIME) tag localhost/testdata/bundles/plain-v0:valid $(DNS_NAME):5000/bundles/plain-v0:valid
 	./test/tools/imageregistry/load_test_image.sh $(KIND) $(KIND_CLUSTER_NAME)
 
 ###########
