@@ -121,7 +121,7 @@ e2e: ## Target for CI e2e testing
 	@echo '********************************************'
 
 kind-cluster: kind kind-cluster-cleanup ## Standup a kind cluster
-	$(KIND) create cluster --name ${KIND_CLUSTER_NAME}
+	$(KIND) create cluster --name ${KIND_CLUSTER_NAME} ${KIND_CLUSTER_CONFIG}
 	$(KIND) export kubeconfig --name ${KIND_CLUSTER_NAME}
 
 kind-cluster-cleanup: kind ## Delete the kind cluster
@@ -136,14 +136,15 @@ local-git: ## Setup in-cluster git repository
 ###################
 # Install and Run #
 ###################
-.PHONY: install install-manifests wait run cert-mgr uninstall
+.PHONY: install install-manifests wait run debug debug-helper cert-mgr uninstall
 
 ##@ install/run:
 
 install: generate cert-mgr install-manifests wait ## Install rukpak
 
+MANIFESTS_DIR ?= manifests
 install-manifests:
-	$(KUBECTL) apply -k manifests
+	$(KUBECTL) apply -k $(MANIFESTS_DIR)
 
 wait:
 	$(KUBECTL) wait --for=condition=Available --namespace=$(RUKPAK_NAMESPACE) deployment/core --timeout=60s
@@ -153,12 +154,21 @@ wait:
 
 run: build-container kind-cluster kind-load install ## Build image, stop/start a local kind cluster, and run operator in that cluster
 
+debug: MANIFESTS_DIR = test/tools/remotedebug ## Same as 'run' target with the addition of remote debugging available on port 40000
+debug: DEBUG_FLAGS = -gcflags="all=-N -l"
+debug: KIND_CLUSTER_CONFIG = --config=./test/tools/remotedebug/kind-config.yaml
+debug: run debug-helper
+
+debug-helper:
+	@echo ''
+	@echo "Remote Debugging for '$$($(KUBECTL) -n $(RUKPAK_NAMESPACE) get pods -l app=core -o name)' in namespace '$(RUKPAK_NAMESPACE)' now available through localhost:40000"
+
 cert-mgr: ## Install the certification manager
 	$(KUBECTL) apply -f https://github.com/cert-manager/cert-manager/releases/download/$(CERT_MGR_VERSION)/cert-manager.yaml
 	$(KUBECTL) wait --for=condition=Available --namespace=cert-manager deployment/cert-manager-webhook --timeout=60s
 
 uninstall: ## Remove all rukpak resources from the cluster
-	$(KUBECTL) delete -k manifests
+	$(KUBECTL) delete -k $(MANIFESTS_DIR)
 
 ##################
 # Build and Load #
@@ -177,10 +187,10 @@ VERSION_FLAGS=-ldflags "-X $(VERSION_PATH).GitCommit=$(GIT_COMMIT)"
 build: $(BINARIES)
 
 $(LINUX_BINARIES):
-	CGO_ENABLED=0 GOOS=linux go build -mod=vendor -tags $(GO_BUILD_TAGS) $(VERSION_FLAGS) -o $(BIN_DIR)/$@ ./cmd/$(notdir $@)
+	CGO_ENABLED=0 GOOS=linux go build $(DEBUG_FLAGS) -mod=vendor -tags $(GO_BUILD_TAGS) $(VERSION_FLAGS) -o $(BIN_DIR)/$@ ./cmd/$(notdir $@)
 
 $(BINARIES):
-	CGO_ENABLED=0 go build -mod=vendor -tags $(GO_BUILD_TAGS) $(VERSION_FLAGS) -o $(BIN_DIR)/$@ ./cmd/$@
+	CGO_ENABLED=0 go build $(DEBUG_FLAGS) -mod=vendor -tags $(GO_BUILD_TAGS) $(VERSION_FLAGS) -o $(BIN_DIR)/$@ ./cmd/$@ $(DEBUG_FLAGS)
 
 build-container: $(LINUX_BINARIES) ## Builds provisioner container image locally
 	$(CONTAINER_RUNTIME) build -f Dockerfile -t $(IMAGE)
