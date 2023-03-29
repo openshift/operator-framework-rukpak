@@ -68,7 +68,7 @@ clean: ## Remove binaries and test artifacts
 
 generate: controller-gen ## Generate code and manifests
 	$(Q)$(CONTROLLER_GEN) crd:crdVersions=v1,generateEmbeddedObjectMeta=true output:crd:dir=./manifests/apis/crds paths=./api/...
-	$(Q)$(CONTROLLER_GEN) webhook paths=./api/... output:stdout > ./manifests/apis/webhooks/resources/webhook.yaml
+	$(Q)$(CONTROLLER_GEN) webhook paths=./api/... paths=./internal/webhook/... output:stdout > ./manifests/apis/webhooks/resources/webhook.yaml
 	$(Q)$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths=./api/...
 	$(Q)$(CONTROLLER_GEN) rbac:roleName=core-admin \
 		paths=./internal/provisioner/bundle/... \
@@ -77,6 +77,7 @@ generate: controller-gen ## Generate code and manifests
 		paths=./internal/provisioner/registry/... \
 		paths=./internal/uploadmgr/... \
 			output:stdout > ./manifests/core/resources/cluster_role.yaml
+	$(Q)$(CONTROLLER_GEN) rbac:roleName=webhooks-admin paths=./internal/webhook/... output:stdout > ./manifests/apis/webhooks/resources/cluster_role.yaml
 	$(Q)$(CONTROLLER_GEN) rbac:roleName=helm-provisioner-admin \
 		paths=./internal/provisioner/bundle/... \
 		paths=./internal/provisioner/bundledeployment/... \
@@ -103,10 +104,10 @@ UNIT_TEST_DIRS=$(shell go list ./... | grep -v /test/)
 test-unit: envtest ## Run the unit tests
 	KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS) go test -tags $(GO_BUILD_TAGS) -count=1 -short $(UNIT_TEST_DIRS)
 
-FOCUS := $(if $(TEST),-v -focus "$(TEST)")
-E2E_FLAGS ?= ""
-run-e2e: ginkgo ## Run the e2e tests
-	$(GINKGO) --tags $(GO_BUILD_TAGS) $(E2E_FLAGS) -trace -progress $(FOCUS) test/e2e
+FOCUS := $(if $(TEST),-v --focus "$(TEST)")
+E2E_FLAGS ?=
+test-e2e: ginkgo ## Run the e2e tests
+	$(GINKGO) --tags $(GO_BUILD_TAGS) $(E2E_FLAGS) --trace --progress $(FOCUS) test/e2e
 
 # This is for local testing
 test-e2e: KIND_CLUSTER_NAME=rukpak-e2e
