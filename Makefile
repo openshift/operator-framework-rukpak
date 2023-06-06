@@ -192,7 +192,7 @@ $(BINARIES):
 	CGO_ENABLED=0 go build $(DEBUG_FLAGS) -mod=vendor -tags $(GO_BUILD_TAGS) -o $(BIN_DIR)/$@ ./cmd/$@ $(DEBUG_FLAGS)
 
 build-container: $(LINUX_BINARIES) ## Builds provisioner container image locally
-	$(CONTAINER_RUNTIME) build -f Dockerfile -t $(IMAGE)
+	$(CONTAINER_RUNTIME) build -f Dockerfile -t $(IMAGE) $(BIN_DIR)/linux
 
 kind-load-bundles: kind ## Load the e2e testdata container images into a kind cluster
 	$(CONTAINER_RUNTIME) build $(TESTDATA_DIR)/bundles/plain-v0/valid -t localhost/testdata/bundles/plain-v0:valid
