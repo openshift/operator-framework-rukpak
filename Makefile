@@ -23,6 +23,14 @@ DNS_NAME=$(REGISTRY_NAME).$(REGISTRY_NAMESPACE).svc.cluster.local
 CONTAINER_RUNTIME ?= docker
 KUBECTL ?= kubectl
 
+# setup-envtest on *nix uses XDG_DATA_HOME, falling back to HOME, as the default storage directory. Some CI setups
+# don't have XDG_DATA_HOME set; in those cases, we set it here so setup-envtest functions correctly. This shouldn't
+# affect developers.
+export XDG_DATA_HOME ?= /tmp/.local/share
+
+# bingo manages consistent tooling versions for things like kind, kustomize, etc.
+include .bingo/Variables.mk
+
 # kernel-style V=1 build verbosity
 ifeq ("$(origin V)", "command line")
   BUILD_VERBOSE = $(V)
@@ -52,10 +60,10 @@ help: ## Show this help screen
 
 ##@ code management:
 
-lint: golangci-lint ## Run golangci linter
+lint: $(GOLANGCI_LINT) ## Run golangci linter
 	# Set the golangci-lint cache directory to a directory that's
 	# writable in downstream CI.
-	GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOLANGCI_LINT) run --build-tags $(GO_BUILD_TAGS)
+	$(Q)GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOLANGCI_LINT) run --build-tags $(GO_BUILD_TAGS)
 
 tidy: ## Update dependencies
 	$(Q)go mod tidy
@@ -66,7 +74,7 @@ fmt: ## Format Go code
 clean: ## Remove binaries and test artifacts
 	@rm -rf bin
 
-generate: controller-gen ## Generate code and manifests
+generate: $(CONTROLLER_GEN) ## Generate code and manifests
 	$(Q)$(CONTROLLER_GEN) crd:crdVersions=v1,generateEmbeddedObjectMeta=true output:crd:dir=./manifests/apis/crds paths=./api/...
 	$(Q)$(CONTROLLER_GEN) webhook paths=./api/... paths=./internal/webhook/... output:stdout > ./manifests/apis/webhooks/resources/webhook.yaml
 	$(Q)$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths=./api/...
@@ -101,12 +109,12 @@ envtest: setup-envtest
 
 ENVTEST_VERSION = $(shell go list -m k8s.io/client-go | cut -d" " -f2 | sed 's/^v0\.\([[:digit:]]\{1,\}\)\.[[:digit:]]\{1,\}$$/1.\1.x/')
 UNIT_TEST_DIRS=$(shell go list ./... | grep -v /test/)
-test-unit: envtest ## Run the unit tests
-	KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS) go test -tags $(GO_BUILD_TAGS) -count=1 -short $(UNIT_TEST_DIRS)
+test-unit: $(SETUP_ENVTEST) ## Run the unit tests
+	eval $$($(SETUP_ENVTEST) use -p env $(ENVTEST_VERSION)) && go test -tags $(GO_BUILD_TAGS) -count=1 -short $(UNIT_TEST_DIRS)
 
 FOCUS := $(if $(TEST),-v --focus "$(TEST)")
 E2E_FLAGS ?=
-test-e2e: ginkgo ## Run the e2e tests
+test-e2e: $(GINKGO) ## Run the e2e tests
 	$(GINKGO) --tags $(GO_BUILD_TAGS) $(E2E_FLAGS) --trace --progress $(FOCUS) test/e2e
 
 # This is for local testing
@@ -121,11 +129,11 @@ e2e: ## Target for CI e2e testing
 	@echo '* Use "make test-e2e" to test e2e via kind *'
 	@echo '********************************************'
 
-kind-cluster: kind kind-cluster-cleanup ## Standup a kind cluster
+kind-cluster: $(KIND) kind-cluster-cleanup ## Standup a kind cluster
 	$(KIND) create cluster --name ${KIND_CLUSTER_NAME} ${KIND_CLUSTER_CONFIG}
 	$(KIND) export kubeconfig --name ${KIND_CLUSTER_NAME}
 
-kind-cluster-cleanup: kind ## Delete the kind cluster
+kind-cluster-cleanup: $(KIND) ## Delete the kind cluster
 	$(KIND) delete cluster --name ${KIND_CLUSTER_NAME}
 
 image-registry: ## Setup in-cluster image registry
@@ -194,7 +202,7 @@ $(BINARIES):
 build-container: $(LINUX_BINARIES) ## Builds provisioner container image locally
 	$(CONTAINER_RUNTIME) build -f Dockerfile -t $(IMAGE) $(BIN_DIR)/linux
 
-kind-load-bundles: kind ## Load the e2e testdata container images into a kind cluster
+kind-load-bundles: $(KIND) ## Load the e2e testdata container images into a kind cluster
 	$(CONTAINER_RUNTIME) build $(TESTDATA_DIR)/bundles/plain-v0/valid -t localhost/testdata/bundles/plain-v0:valid
 	$(CONTAINER_RUNTIME) build $(TESTDATA_DIR)/bundles/plain-v0/dependent -t localhost/testdata/bundles/plain-v0:dependent
 	$(CONTAINER_RUNTIME) build $(TESTDATA_DIR)/bundles/plain-v0/provides -t localhost/testdata/bundles/plain-v0:provides
@@ -216,7 +224,7 @@ kind-load-bundles: kind ## Load the e2e testdata container images into a kind cl
 	$(KIND) load docker-image localhost/testdata/bundles/registry:valid --name $(KIND_CLUSTER_NAME)
 	$(KIND) load docker-image localhost/testdata/bundles/registry:invalid --name $(KIND_CLUSTER_NAME)
 
-kind-load: kind ## Loads the currently constructed image onto the cluster
+kind-load: $(KIND) ## Loads the currently constructed image onto the cluster
 	$(KIND) load docker-image $(IMAGE) --name $(KIND_CLUSTER_NAME)
 
 registry-load-bundles: ## Load selected e2e testdata container images created in kind-load-bundles into registry
@@ -231,47 +239,9 @@ registry-load-bundles: ## Load selected e2e testdata container images created in
 
 export ENABLE_RELEASE_PIPELINE ?= false
 release: GORELEASER_ARGS ?= --snapshot --clean
-release: goreleaser ## Run goreleaser
+release: $(GORELEASER) ## Run goreleaser
 	$(GORELEASER) $(GORELEASER_ARGS)
 
 quickstart: VERSION ?= $(shell git describe --abbrev=0 --tags)
 quickstart: generate ## Generate the installation release manifests
 	$(KUBECTL) kustomize manifests | sed "s/:devel/:$(VERSION)/g" > rukpak.yaml
-
-################
-# Hack / Tools #
-################
-TOOLS_DIR := $(shell pwd)/hack/tools
-TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
-
-##@ hack/tools:
-# Versions are specified in hack/tools/go.mod
-
-.PHONY: golangci-lint ginkgo controller-gen goreleaser kind
-
-GOLANGCI_LINT := $(abspath $(TOOLS_BIN_DIR)/golangci-lint)
-GINKGO := $(abspath $(TOOLS_BIN_DIR)/ginkgo)
-CONTROLLER_GEN := $(abspath $(TOOLS_BIN_DIR)/controller-gen)
-SETUP_ENVTEST := $(abspath $(TOOLS_BIN_DIR)/setup-envtest)
-GORELEASER := $(abspath $(TOOLS_BIN_DIR)/goreleaser)
-KIND := $(abspath $(TOOLS_BIN_DIR)/kind)
-
-controller-gen: $(CONTROLLER_GEN) ## Build a local copy of controller-gen
-ginkgo: $(GINKGO) ## Build a local copy of ginkgo
-golangci-lint: $(GOLANGCI_LINT) ## Build a local copy of golangci-lint
-setup-envtest: $(SETUP_ENVTEST) ## Build a local copy of envtest
-goreleaser: $(GORELEASER) ## Builds a local copy of goreleaser
-kind: $(KIND) ## Builds a local copy of kind
-
-$(CONTROLLER_GEN): $(TOOLS_DIR)/go.mod # Build controller-gen from tools folder.
-	cd $(TOOLS_DIR); go build -mod=mod -tags=tools -o $(BIN_DIR)/controller-gen sigs.k8s.io/controller-tools/cmd/controller-gen
-$(GINKGO): $(TOOLS_DIR)/go.mod # Build ginkgo from tools folder.
-	cd $(TOOLS_DIR); go build -mod=mod -tags=tools -o $(BIN_DIR)/ginkgo github.com/onsi/ginkgo/v2/ginkgo
-$(GOLANGCI_LINT): $(TOOLS_DIR)/go.mod # Build golangci-lint from tools folder.
-	cd $(TOOLS_DIR); go build -mod=mod -tags=tools -o $(BIN_DIR)/golangci-lint github.com/golangci/golangci-lint/cmd/golangci-lint
-$(SETUP_ENVTEST): $(TOOLS_DIR)/go.mod # Build setup-envtest from tools folder.
-	cd $(TOOLS_DIR); go build -mod=mod -tags=tools -o $(BIN_DIR)/setup-envtest sigs.k8s.io/controller-runtime/tools/setup-envtest
-$(GORELEASER): $(TOOLS_DIR)/go.mod # Build goreleaser from tools folder.
-	cd $(TOOLS_DIR); go build -mod=mod -tags=tools -o $(BIN_DIR)/goreleaser github.com/goreleaser/goreleaser
-$(KIND): $(TOOLS_DIR)/go.mod
-	cd $(TOOLS_DIR); go build -mod=mod -tags=tools -o $(BIN_DIR)/kind sigs.k8s.io/kind
