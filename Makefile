@@ -60,10 +60,11 @@ help: ## Show this help screen
 
 ##@ code management:
 
+lint: GOLANGCI_LINT_ARGS ?= ''
 lint: $(GOLANGCI_LINT) ## Run golangci linter
 	# Set the golangci-lint cache directory to a directory that's
 	# writable in downstream CI.
-	$(Q)GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOLANGCI_LINT) run --build-tags $(GO_BUILD_TAGS)
+	$(Q)GOLANGCI_LINT_CACHE=/tmp/golangci-cache $(GOLANGCI_LINT) run --build-tags $(GO_BUILD_TAGS) $(GOLANGCI_LINT_ARGS)
 
 tidy: ## Update dependencies
 	$(Q)go mod tidy
