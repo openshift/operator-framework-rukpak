@@ -60,7 +60,6 @@ help: ## Show this help screen
 
 ##@ code management:
 
-lint: GOLANGCI_LINT_ARGS ?= ''
 lint: $(GOLANGCI_LINT) ## Run golangci linter
 	# Set the golangci-lint cache directory to a directory that's
 	# writable in downstream CI.
