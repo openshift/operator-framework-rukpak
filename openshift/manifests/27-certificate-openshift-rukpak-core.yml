@@ -1,0 +1,17 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations:
+    release.openshift.io/feature-set: TechPreviewNoUpgrade
+  name: core
+  namespace: openshift-rukpak
+spec:
+  dnsNames:
+    - localhost
+    - core.openshift-rukpak.svc
+    - core.openshift-rukpak.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: rukpak-ca-issuer
+  secretName: core-cert

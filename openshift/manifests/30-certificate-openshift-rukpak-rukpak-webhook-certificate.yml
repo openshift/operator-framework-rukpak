@@ -1,0 +1,16 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations:
+    release.openshift.io/feature-set: TechPreviewNoUpgrade
+  name: rukpak-webhook-certificate
+  namespace: openshift-rukpak
+spec:
+  dnsNames:
+    - rukpak-webhook-service.openshift-rukpak.svc
+    - rukpak-webhook-service.openshift-rukpak.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: rukpak-selfsigned
+  secretName: rukpak-webhook-certificate

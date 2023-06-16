@@ -1,0 +1,11 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  annotations:
+    release.openshift.io/feature-set: TechPreviewNoUpgrade
+  name: rukpak-ca-issuer
+  namespace: openshift-rukpak
+spec:
+  ca:
+    secretName: rukpak-ca

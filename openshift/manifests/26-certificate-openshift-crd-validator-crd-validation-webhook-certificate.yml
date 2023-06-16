@@ -1,0 +1,14 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations:
+    release.openshift.io/feature-set: TechPreviewNoUpgrade
+  name: crd-validation-webhook-certificate
+  namespace: openshift-crd-validator
+spec:
+  dnsNames:
+    - crd-validation-webhook.crdvalidator-system.svc
+  issuerRef:
+    name: selfsigned
+  secretName: crd-validation-webhook-certificate
