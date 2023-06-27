@@ -4,6 +4,19 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+UPSTREAM_RUKPAK_VERSION=v0.12.0
+
+# This is a mapping of deployment container names to image placeholder values. For example, given a deployment with
+# 2 containers named kube-rbac-proxy and manager, their images will be set to ${KUBE_RBAC_PROXY_IMAGE} and
+# ${RUKPAK_IMAGE}, respectively. The cluster-olm-operator will replace these placeholders will real image values.
+declare -A IMAGE_MAPPINGS
+# shellcheck disable=SC2016
+IMAGE_MAPPINGS[kube-rbac-proxy]='${KUBE_RBAC_PROXY_IMAGE}'
+# shellcheck disable=SC2016
+IMAGE_MAPPINGS[manager]='${RUKPAK_IMAGE}'
+# shellcheck disable=SC2016
+IMAGE_MAPPINGS[webhooks]='${RUKPAK_IMAGE}'
+
 # Know where the repo root is so we can reference things relative to it
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -15,29 +28,19 @@ TMP_ROOT="$(mktemp -p . -d 2>/dev/null || mktemp -d ./tmpdir.XXXXXXX)"
 # Make sure to delete the temp dir when we exit
 trap 'rm -rf $TMP_ROOT' EXIT
 
-# Copy all kustomize files into a temp dir
-TMP_CONFIG="${TMP_ROOT}/manifests"
-cp -a "${REPO_ROOT}/manifests" "$TMP_CONFIG"
-
-# Override core namespace to openshift-rukpak
-$YQ -i '.namespace = "openshift-rukpak"' "${TMP_CONFIG}/core/kustomization.yaml"
-# Override helm-provisioner namespace to openshift-rukpak
-$YQ -i '.namespace = "openshift-rukpak"' "${TMP_CONFIG}/provisioners/kustomization.yaml"
-# Override apis namespace to openshift-rukpak
-$YQ -i '.namespace = "openshift-rukpak"' "${TMP_CONFIG}/apis/kustomization.yml"
-# Override crd-validator namespace to openshift-crd-validator
-$YQ -i '.namespace = "openshift-crd-validator"' "${TMP_CONFIG}/crdvalidator/kustomization.yml"
-
-# Set the "TechPreviewNoUpgrade" for commonAnnotations 
-$YQ -i '.commonAnnotations."release.openshift.io/feature-set" = "TechPreviewNoUpgrade"' "${TMP_CONFIG}/kustomization.yaml"
-
 # Create a temp dir for manifests
 TMP_MANIFEST_DIR="${TMP_ROOT}/manifests"
 mkdir -p "$TMP_MANIFEST_DIR"
 
-# Run kustomize, which emits a single yaml file
+# Run kustomize, overwriting the rukpak image tag and outputting to a single yaml file
 TMP_KUSTOMIZE_OUTPUT="${TMP_MANIFEST_DIR}/temp.yaml"
-kubectl kustomize "${TMP_CONFIG}" -o "$TMP_KUSTOMIZE_OUTPUT"
+kubectl kustomize "${REPO_ROOT}"/openshift/kustomize/overlays/service-ca-operator -o "$TMP_KUSTOMIZE_OUTPUT"
+
+for container_name in "${!IMAGE_MAPPINGS[@]}"; do
+  placeholder="${IMAGE_MAPPINGS[$container_name]}"
+  $YQ -i "(select(.kind == \"Deployment\")|.spec.template.spec.containers[]|select(.name==\"$container_name\")|.image) = \"$placeholder\"" "$TMP_KUSTOMIZE_OUTPUT"
+  $YQ -i "(select(.kind == \"Deployment\")|.spec.template.spec.containers[].args[]|select(. == \"--unpack-image*\")) = \"--unpack-image=$placeholder\"" "$TMP_KUSTOMIZE_OUTPUT"
+done
 
 # Use yq to split the single yaml file into 1 per document.
 # Naming convention: $index-$kind-$namespace-$name. If $namespace is empty, just use the empty string.

@@ -1,0 +1,53 @@
+resources:
+- ../../../../manifests/base/apis
+- ../../../../manifests/base/core
+- ../../../../manifests/base/provisioners
+
+namespace: openshift-rukpak
+
+patches:
+- target: 
+    group: admissionregistration.k8s.io
+    version: v1
+    kind: ValidatingWebhookConfiguration
+    name: validating-webhook-configuration
+  path: patches/validating_webhook_cainjection.yaml
+- target: 
+    group: admissionregistration.k8s.io
+    version: v1
+    kind: ValidatingWebhookConfiguration
+    name: crd-validation-webhook
+  path: patches/crd_validation_cainjection.yaml
+- target:
+    kind: Deployment
+    name: core
+  path: patches/core_deployment_certs.yaml
+- target:
+    kind: Deployment
+    name: helm-provisioner
+  path: patches/helm_provisioner_deployment_certs.yaml
+- target:
+    kind: Service
+    name: core
+  path: patches/core_service.yaml
+- target:
+    kind: Service
+    name: rukpak-webhook-service
+  path: patches/webhook_service.yaml
+- target:
+    kind: Service
+    name: helm-provisioner
+  path: patches/helm_provisioner_service.yaml
+
+replacements:
+- source:
+    kind: Service # Replace WEBHOOK_SECRET_NAME with name of generated secret
+    name: rukpak-webhook-service
+    fieldPath: metadata.annotations.[service.beta.openshift.io/serving-cert-secret-name]
+  targets:
+  - select:
+      kind: Deployment
+      name: webhooks
+      namespace: system
+    fieldPaths:
+    - spec.template.spec.volumes.[name=cert].secret.secretName

@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  annotations:
-    release.openshift.io/feature-set: TechPreviewNoUpgrade
-  name: openshift-crd-validator

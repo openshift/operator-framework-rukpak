@@ -9,3 +9,7 @@ include $(DIR)/../.bingo/Variables.mk
 .PHONY: manifests
 manifests: $(KUSTOMIZE) $(YQ)
 	$(DIR)/generate-manifests.sh
+
+.PHONY: verify-manifests
+verify-manifests: manifests
+	git diff --exit-code
