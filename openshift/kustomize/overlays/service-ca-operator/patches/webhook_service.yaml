@@ -1,0 +1,5 @@
+kind: Service
+metadata:
+  name: rukpak-webhook-service
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: rukpak-webhook-certificate

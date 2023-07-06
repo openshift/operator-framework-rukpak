@@ -1,0 +1,30 @@
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: "--tls-cert-file=/etc/pki/tls/tls.crt"
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: "--tls-private-key-file=/etc/pki/tls/tls.key"
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: "--upstream-ca-file=/etc/configmaps/ca-bundle/service-ca.crt"
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value: {"name":"certs", "mountPath":"/etc/pki/tls"}
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value: {"name":"ca-bundle", "mountPath":"/etc/configmaps/ca-bundle", "readOnly":false}
+- op: add
+  path: /spec/template/spec/containers/1/args/-
+  value: "--bundle-ca-file=/etc/configmaps/ca-bundle/service-ca.crt"
+- op: add
+  path: /spec/template/spec/containers/1/volumeMounts/-
+  value: {"name":"certs", "mountPath":"/etc/pki/tls"}
+- op: add
+  path: /spec/template/spec/containers/1/volumeMounts/-
+  value: {"name":"ca-bundle", "mountPath":"/etc/configmaps/ca-bundle", "readOnly":false}
+- op: add
+  path: /spec/template/spec/volumes/-
+  value: {"name":"certs", "secret":{"optional":false,"secretName":"helm-provisioner-cert"}}
+- op: add
+  path: /spec/template/spec/volumes/-
+  value: {"name":"ca-bundle", "configMap":{"name":"openshift-service-ca.crt", "items":[{"key":"service-ca.crt", "path":"service-ca.crt"}]}}
