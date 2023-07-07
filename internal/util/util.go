@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -207,7 +206,7 @@ func MapBundleToBundleDeployment(ctx context.Context, c client.Client, b rukpakv
 // standalone resource, then no BundleDeployment will be returned as static creation of Bundle
 // resources is not a supported workflow right now. The provisionerClassName parameter is used
 // to filter out BundleDeployments that the caller shouldn't be watching.
-func MapBundleToBundleDeploymentHandler(ctx context.Context, cl client.Client, provisionerClassName string) handler.MapFunc {
+func MapBundleToBundleDeploymentHandler(ctx context.Context, cl client.Client, log logr.Logger, provisionerClassName string) handler.MapFunc {
 	return func(object client.Object) []reconcile.Request {
 		b := object.(*rukpakv1alpha1.Bundle)
 
@@ -220,37 +219,6 @@ func MapBundleToBundleDeploymentHandler(ctx context.Context, cl client.Client, p
 		}
 		return []reconcile.Request{{NamespacedName: client.ObjectKeyFromObject(managingBD)}}
 	}
-}
-func MapConfigMapToBundles(ctx context.Context, cl client.Client, cmNamespace string, cm corev1.ConfigMap) []*rukpakv1alpha1.Bundle {
-	bundleList := &rukpakv1alpha1.BundleList{}
-	if err := cl.List(ctx, bundleList); err != nil {
-		return nil
-	}
-	var bs []*rukpakv1alpha1.Bundle
-	for _, b := range bundleList.Items {
-		b := b
-		for _, cmSource := range b.Spec.Source.ConfigMaps {
-			cmName := cmSource.ConfigMap.Name
-			if cm.Name == cmName && cm.Namespace == cmNamespace {
-				bs = append(bs, &b)
-			}
-		}
-	}
-	return bs
-}
-func MapConfigMapToBundlesHandler(ctx context.Context, cl client.Client, configMapNamespace string, provisionerClassName string) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
-		cm := object.(*corev1.ConfigMap)
-		var requests []reconcile.Request
-		matchingBundles := MapConfigMapToBundles(ctx, cl, configMapNamespace, *cm)
-		for _, b := range matchingBundles {
-			if b.Spec.ProvisionerClassName != provisionerClassName {
-				continue
-			}
-			requests = append(requests, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(b)})
-		}
-		return requests
-	})
 }
 
 // GetBundlesForBundleDeploymentSelector is responsible for returning a list of
@@ -319,14 +287,14 @@ func SortBundlesByCreation(bundles *rukpakv1alpha1.BundleList) {
 	})
 }
 
-// PodNamespace checks whether the controller is running in a Pod vs.
+// GetPodNamespace checks whether the controller is running in a Pod vs.
 // being run locally by inspecting the namespace file that gets mounted
 // automatically for Pods at runtime. If that file doesn't exist, then
-// return DefaultSystemNamespace.
-func PodNamespace() string {
+// return the @defaultNamespace namespace parameter.
+func PodNamespace(defaultNamespace string) string {
 	namespace, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
-		return DefaultSystemNamespace
+		return defaultNamespace
 	}
 	return string(namespace)
 }

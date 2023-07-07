@@ -36,15 +36,14 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	crfinalizer "sigs.k8s.io/controller-runtime/pkg/finalizer"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	rukpakv1alpha1 "github.com/operator-framework/rukpak/api/v1alpha1"
-	"github.com/operator-framework/rukpak/internal/controllers/bundle"
-	"github.com/operator-framework/rukpak/internal/controllers/bundledeployment"
 	"github.com/operator-framework/rukpak/internal/finalizer"
+	"github.com/operator-framework/rukpak/internal/provisioner/bundle"
+	"github.com/operator-framework/rukpak/internal/provisioner/bundledeployment"
 	"github.com/operator-framework/rukpak/internal/provisioner/plain"
 	"github.com/operator-framework/rukpak/internal/provisioner/registry"
 	"github.com/operator-framework/rukpak/internal/source"
@@ -85,7 +84,7 @@ func main() {
 	flag.StringVar(&httpExternalAddr, "http-external-address", "http://localhost:8080", "The external address at which the http server is reachable.")
 	flag.StringVar(&bundleCAFile, "bundle-ca-file", "", "The file containing the certificate authority for connecting to bundle content servers.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&systemNamespace, "system-namespace", "", "Configures the namespace that gets used to deploy system resources.")
+	flag.StringVar(&systemNamespace, "system-namespace", util.DefaultSystemNamespace, "Configures the namespace that gets used to deploy system resources.")
 	flag.StringVar(&unpackImage, "unpack-image", util.DefaultUnpackImage, "Configures the container image that gets used to unpack Bundle contents.")
 	flag.StringVar(&baseUploadManagerURL, "base-upload-manager-url", "", "The base URL from which to fetch uploaded bundles.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -102,7 +101,7 @@ func main() {
 	flag.Parse()
 
 	if rukpakVersion {
-		fmt.Println(version.String())
+		fmt.Printf("Git commit: %s\n", version.String())
 		os.Exit(0)
 	}
 
@@ -117,18 +116,6 @@ func main() {
 	dependentSelector := labels.NewSelector().Add(*dependentRequirement)
 
 	cfg := ctrl.GetConfigOrDie()
-	if systemNamespace == "" {
-		systemNamespace = util.PodNamespace()
-	}
-
-	systemNsCluster, err := cluster.New(cfg, func(opts *cluster.Options) {
-		opts.Scheme = scheme
-		opts.Namespace = systemNamespace
-	})
-	if err != nil {
-		setupLog.Error(err, "unable to create system namespace cluster")
-		os.Exit(1)
-	}
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     httpBindAddr,
@@ -151,11 +138,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := mgr.Add(systemNsCluster); err != nil {
-		setupLog.Error(err, "unable to add system namespace cluster to manager")
-		os.Exit(1)
-	}
-
+	ns := util.PodNamespace(systemNamespace)
 	storageURL, err := url.Parse(fmt.Sprintf("%s/bundles/", httpExternalAddr))
 	if err != nil {
 		setupLog.Error(err, "unable to parse bundle content server URL")
@@ -218,7 +201,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	unpacker, err := source.NewDefaultUnpacker(systemNsCluster, systemNamespace, unpackImage, baseUploadManagerURL, rootCAs)
+	unpacker, err := source.NewDefaultUnpacker(mgr, ns, unpackImage, baseUploadManagerURL, rootCAs)
 	if err != nil {
 		setupLog.Error(err, "unable to setup bundle unpacker")
 		os.Exit(1)
@@ -233,12 +216,12 @@ func main() {
 	cfgGetter := helmclient.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper(), mgr.GetLogger())
 	acg := helmclient.NewActionClientGetter(cfgGetter)
 	commonBDProvisionerOptions := []bundledeployment.Option{
-		bundledeployment.WithReleaseNamespace(systemNamespace),
+		bundledeployment.WithReleaseNamespace(ns),
 		bundledeployment.WithActionClientGetter(acg),
 		bundledeployment.WithStorage(bundleStorage),
 	}
 
-	if err := bundle.SetupWithManager(mgr, systemNsCluster.GetCache(), systemNamespace, append(
+	if err := bundle.SetupProvisioner(mgr, append(
 		commonBundleProvisionerOptions,
 		bundle.WithProvisionerID(plain.ProvisionerID),
 		bundle.WithHandler(bundle.HandlerFunc(plain.HandleBundle)),
@@ -247,7 +230,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := bundle.SetupWithManager(mgr, systemNsCluster.GetCache(), systemNamespace, append(
+	if err := bundle.SetupProvisioner(mgr, append(
 		commonBundleProvisionerOptions,
 		bundle.WithProvisionerID(registry.ProvisionerID),
 		bundle.WithHandler(bundle.HandlerFunc(registry.HandleBundle)),
@@ -256,7 +239,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := bundledeployment.SetupWithManager(mgr, append(
+	if err := bundledeployment.SetupProvisioner(mgr, append(
 		commonBDProvisionerOptions,
 		bundledeployment.WithProvisionerID(plain.ProvisionerID),
 		bundledeployment.WithHandler(bundledeployment.HandlerFunc(plain.HandleBundleDeployment)),

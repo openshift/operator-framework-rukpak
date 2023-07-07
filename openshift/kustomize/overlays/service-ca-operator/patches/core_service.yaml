@@ -1,5 +1,0 @@
-kind: Service
-metadata:
-  name: core
-  annotations:
-    service.beta.openshift.io/serving-cert-secret-name: core-cert

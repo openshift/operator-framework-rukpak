@@ -25,8 +25,8 @@ to quickly create a Cobra application.`,
 
 	rootCmd.AddCommand(
 		newContentCmd(),
+		newCreateCmd(),
 		newRunCmd(),
-		newVersionCmd(),
 	)
 
 	// Only add the alpha command if its non-nil. It will be nil if

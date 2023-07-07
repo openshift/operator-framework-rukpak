@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	rukpakv1alpha1 "github.com/operator-framework/rukpak/api/v1alpha1"
 )
@@ -101,8 +101,8 @@ func (s *unpacker) Unpack(ctx context.Context, bundle *rukpakv1alpha1.Bundle) (*
 // source types.
 //
 // TODO: refactor NewDefaultUnpacker due to growing parameter list
-func NewDefaultUnpacker(systemNsCluster cluster.Cluster, namespace, unpackImage string, baseUploadManagerURL string, rootCAs *x509.CertPool) (Unpacker, error) {
-	cfg := systemNsCluster.GetConfig()
+func NewDefaultUnpacker(mgr ctrl.Manager, namespace, unpackImage string, baseUploadManagerURL string, rootCAs *x509.CertPool) (Unpacker, error) {
+	cfg := mgr.GetConfig()
 	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -116,26 +116,26 @@ func NewDefaultUnpacker(systemNsCluster cluster.Cluster, namespace, unpackImage 
 	httpTransport.TLSClientConfig.RootCAs = rootCAs
 	return NewUnpacker(map[rukpakv1alpha1.SourceType]Unpacker{
 		rukpakv1alpha1.SourceTypeImage: &Image{
-			Client:       systemNsCluster.GetClient(),
+			Client:       mgr.GetClient(),
 			KubeClient:   kubeClient,
 			PodNamespace: namespace,
 			UnpackImage:  unpackImage,
 		},
 		rukpakv1alpha1.SourceTypeGit: &Git{
-			Reader:          systemNsCluster.GetClient(),
+			Reader:          mgr.GetAPIReader(),
 			SecretNamespace: namespace,
 		},
-		rukpakv1alpha1.SourceTypeConfigMaps: &ConfigMaps{
-			Reader:             systemNsCluster.GetClient(),
-			ConfigMapNamespace: namespace,
+		rukpakv1alpha1.SourceTypeLocal: &Local{
+			Client: mgr.GetClient(),
+			reader: mgr.GetAPIReader(),
 		},
 		rukpakv1alpha1.SourceTypeUpload: &Upload{
 			baseDownloadURL: baseUploadManagerURL,
-			bearerToken:     systemNsCluster.GetConfig().BearerToken,
+			bearerToken:     mgr.GetConfig().BearerToken,
 			client:          http.Client{Timeout: uploadClientTimeout, Transport: httpTransport},
 		},
 		rukpakv1alpha1.SourceTypeHTTP: &HTTP{
-			Reader:          systemNsCluster.GetClient(),
+			Reader:          mgr.GetAPIReader(),
 			SecretNamespace: namespace,
 		},
 	}), nil

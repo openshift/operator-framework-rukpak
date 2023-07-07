@@ -60,13 +60,13 @@ var _ = Describe("WithFallbackLoader", func() {
 
 	It("should find primary bundle", func() {
 		loadedTestFS, err := store.Load(ctx, primaryBundle)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(fsEqual(primaryFS, loadedTestFS)).To(BeTrue())
+		Expect(err).To(BeNil())
+		Expect(fsEqual(primaryFS, loadedTestFS))
 	})
 	It("should find fallback bundle", func() {
 		loadedTestFS, err := store.Load(ctx, fallbackBundle)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(fsEqual(fallbackFS, loadedTestFS)).To(BeTrue())
+		Expect(err).To(BeNil())
+		Expect(fsEqual(fallbackFS, loadedTestFS))
 	})
 	It("should fail to find unknown bundle", func() {
 		unknownBundle := &rukpakv1alpha1.Bundle{

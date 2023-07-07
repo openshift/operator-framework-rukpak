@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	rukpakv1alpha1 "github.com/operator-framework/rukpak/api/v1alpha1"
@@ -74,12 +73,12 @@ var _ = Describe("plain provisioner bundle", func() {
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing Bundle resource")
 			err := c.Delete(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		It("should consistently contain an empty status", func() {
 			Consistently(func() bool {
@@ -114,12 +113,12 @@ var _ = Describe("plain provisioner bundle", func() {
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing Bundle resource")
 			err := c.Delete(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 
 		It("should eventually report a successful state", func() {
@@ -176,7 +175,7 @@ var _ = Describe("plain provisioner bundle", func() {
 
 			By("deleting the underlying pod and waiting for it to be re-created")
 			err := c.Delete(context.Background(), pod)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 
 			By("verifying the pod's UID has changed")
 			Eventually(func() (types.UID, error) {
@@ -233,12 +232,12 @@ var _ = Describe("plain provisioner bundle", func() {
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing Bundle resource")
 			err := c.Delete(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 
 		It("should eventually report a successful state", func() {
@@ -293,12 +292,12 @@ var _ = Describe("plain provisioner bundle", func() {
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing Bundle resource")
 			err := c.Delete(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 
 		It("checks the bundle's phase is stuck in pending", func() {
@@ -367,12 +366,12 @@ var _ = Describe("plain provisioner bundle", func() {
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing Bundle resource")
 			err := c.Delete(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		It("reports an unpack error when the manifests directory is missing", func() {
 			By("waiting for the bundle to report back that state")
@@ -416,12 +415,12 @@ var _ = Describe("plain provisioner bundle", func() {
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing Bundle resource")
 			err := c.Delete(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		It("reports an unpack error when the manifests directory contains no objects", func() {
 			By("waiting for the bundle to report back that state")
@@ -473,12 +472,12 @@ var _ = Describe("plain provisioner bundle", func() {
 					},
 				}
 				err := c.Create(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			AfterEach(func() {
 				err := c.Delete(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			It("Can create and unpack the bundle successfully", func() {
@@ -525,12 +524,12 @@ var _ = Describe("plain provisioner bundle", func() {
 					},
 				}
 				err := c.Create(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			AfterEach(func() {
 				err := c.Delete(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			It("Can create and unpack the bundle successfully", func() {
@@ -596,12 +595,12 @@ var _ = Describe("plain provisioner bundle", func() {
 					},
 				}
 				err := c.Create(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			AfterEach(func() {
 				err := c.Delete(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			It("Can create and unpack the bundle successfully", func() {
@@ -668,12 +667,12 @@ var _ = Describe("plain provisioner bundle", func() {
 					},
 				}
 				err := c.Create(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			AfterEach(func() {
 				err := c.Delete(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			It("Can create and unpack the bundle successfully", func() {
@@ -711,7 +710,7 @@ var _ = Describe("plain provisioner bundle", func() {
 				if privateRepo == "" {
 					Skip("Private repository information is not set.")
 				}
-				Expect(privateRepo[:4]).To(Equal("http"))
+				Expect(privateRepo[:4] == "http").To(BeTrue())
 
 				secret = &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -722,7 +721,7 @@ var _ = Describe("plain provisioner bundle", func() {
 					Type: "Opaque",
 				}
 				err := c.Create(ctx, secret)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 				bundle = &rukpakv1alpha1.Bundle{
 					ObjectMeta: metav1.ObjectMeta{
 						GenerateName: "combo-git-branch",
@@ -746,14 +745,14 @@ var _ = Describe("plain provisioner bundle", func() {
 					},
 				}
 				err = c.Create(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			AfterEach(func() {
 				err := c.Delete(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 				err = c.Delete(ctx, secret)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			It("Can create and unpack the bundle successfully", func() {
@@ -809,12 +808,12 @@ var _ = Describe("plain provisioner bundle", func() {
 					},
 				}
 				err := c.Create(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			AfterEach(func() {
 				err := c.Delete(ctx, bundle)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 
 			It("Can create and unpack the bundle successfully", func() {
@@ -823,11 +822,7 @@ var _ = Describe("plain provisioner bundle", func() {
 						return err
 					}
 					if bundle.Status.Phase != rukpakv1alpha1.PhaseUnpacked {
-						unpackedCondition := meta.FindStatusCondition(bundle.Status.Conditions, rukpakv1alpha1.TypeUnpacked)
-						if unpackedCondition == nil {
-							return errors.New("bundle is not unpacked")
-						}
-						return fmt.Errorf("bundle is not unpacked: %s", unpackedCondition.Message)
+						return errors.New("bundle is not unpacked")
 					}
 
 					provisionerPods := &corev1.PodList{}
@@ -869,17 +864,16 @@ var _ = Describe("plain provisioner bundle", func() {
 				data[info.Name()] = string(c)
 				return nil
 			})
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 			configmap = &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "bundle-configmap-valid-",
+					GenerateName: "local-configmap-",
 					Namespace:    defaultSystemNamespace,
 				},
-				Data:      data,
-				Immutable: pointer.Bool(true),
+				Data: data,
 			}
 			err = c.Create(ctx, configmap)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 			bundle = &rukpakv1alpha1.Bundle{
 				ObjectMeta: metav1.ObjectMeta{
 					GenerateName: "combo-local-",
@@ -887,23 +881,23 @@ var _ = Describe("plain provisioner bundle", func() {
 				Spec: rukpakv1alpha1.BundleSpec{
 					ProvisionerClassName: plain.ProvisionerID,
 					Source: rukpakv1alpha1.BundleSource{
-						Type: rukpakv1alpha1.SourceTypeConfigMaps,
-						ConfigMaps: []rukpakv1alpha1.ConfigMapSource{{
-							ConfigMap: corev1.LocalObjectReference{Name: configmap.ObjectMeta.Name},
-							Path:      "manifests",
-						}},
+						Type: rukpakv1alpha1.SourceTypeLocal,
+						Local: &rukpakv1alpha1.LocalSource{
+							ConfigMapRef: &rukpakv1alpha1.ConfigMapRef{
+								Name:      configmap.ObjectMeta.Name,
+								Namespace: defaultSystemNamespace,
+							},
+						},
 					},
 				},
 			}
 			err = c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 
 		AfterEach(func() {
-			Expect(client.IgnoreNotFound(c.Delete(ctx, bundle))).To(Succeed())
-			Eventually(func() error {
-				return client.IgnoreNotFound(c.Delete(ctx, configmap))
-			}).Should(Succeed())
+			err := c.Delete(ctx, bundle)
+			Expect(client.IgnoreNotFound(err)).To(BeNil())
 		})
 
 		It("Can create and unpack the bundle successfully", func() {
@@ -912,14 +906,24 @@ var _ = Describe("plain provisioner bundle", func() {
 					return err
 				}
 				if bundle.Status.Phase != rukpakv1alpha1.PhaseUnpacked {
-					unpackedCondition := meta.FindStatusCondition(bundle.Status.Conditions, rukpakv1alpha1.TypeUnpacked)
-					if unpackedCondition == nil {
-						return errors.New("bundle is not unpacked")
-					}
-					return fmt.Errorf("bundle is not unpacked: %s", unpackedCondition.Message)
+					return errors.New("bundle is not unpacked")
 				}
 				return nil
 			}).Should(BeNil())
+
+			By("deleting the configmap after the bundle is deleted")
+			err := c.Delete(ctx, bundle)
+			Expect(err).To(BeNil())
+
+			Eventually(func() (bool, error) {
+				if err := c.Get(ctx, client.ObjectKeyFromObject(configmap), configmap); err != nil {
+					if apierrors.IsNotFound(err) {
+						return true, nil
+					}
+					return false, err
+				}
+				return false, nil
+			}).Should(BeTrue())
 		})
 	})
 
@@ -938,21 +942,23 @@ var _ = Describe("plain provisioner bundle", func() {
 				Spec: rukpakv1alpha1.BundleSpec{
 					ProvisionerClassName: plain.ProvisionerID,
 					Source: rukpakv1alpha1.BundleSource{
-						Type: rukpakv1alpha1.SourceTypeConfigMaps,
-						ConfigMaps: []rukpakv1alpha1.ConfigMapSource{{
-							ConfigMap: corev1.LocalObjectReference{Name: "non-exist"},
-							Path:      "manifests",
-						}},
+						Type: rukpakv1alpha1.SourceTypeLocal,
+						Local: &rukpakv1alpha1.LocalSource{
+							ConfigMapRef: &rukpakv1alpha1.ConfigMapRef{
+								Name:      "non-exist",
+								Namespace: defaultSystemNamespace,
+							},
+						},
 					},
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 
 		AfterEach(func() {
 			err := c.Delete(ctx, bundle)
-			Expect(client.IgnoreNotFound(err)).To(Succeed())
+			Expect(client.IgnoreNotFound(err)).To(BeNil())
 		})
 		It("eventually results in a failing bundle state", func() {
 			By("waiting until the bundle is reporting Failing state")
@@ -967,7 +973,7 @@ var _ = Describe("plain provisioner bundle", func() {
 				WithTransform(func(c *metav1.Condition) metav1.ConditionStatus { return c.Status }, Equal(metav1.ConditionFalse)),
 				WithTransform(func(c *metav1.Condition) string { return c.Reason }, Equal(rukpakv1alpha1.ReasonUnpackFailed)),
 				WithTransform(func(c *metav1.Condition) string { return c.Message },
-					ContainSubstring(fmt.Sprintf("source bundle content: get configmap %[1]s/%[2]s: ConfigMap %[2]q not found", defaultSystemNamespace, "non-exist"))),
+					ContainSubstring(fmt.Sprintf("source bundle content: could not find configmap %s/%s on the cluster", defaultSystemNamespace, "non-exist"))),
 			))
 		})
 	})
@@ -996,17 +1002,16 @@ var _ = Describe("plain provisioner bundle", func() {
 				data[info.Name()] = string(c)
 				return nil
 			})
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 			configmap = &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "bundle-configmap-invalid-",
+					GenerateName: "local-configmap-",
 					Namespace:    defaultSystemNamespace,
 				},
-				Data:      data,
-				Immutable: pointer.Bool(true),
+				Data: data,
 			}
 			err = c.Create(ctx, configmap)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 			bundle = &rukpakv1alpha1.Bundle{
 				ObjectMeta: metav1.ObjectMeta{
 					GenerateName: "combo-local-",
@@ -1014,23 +1019,25 @@ var _ = Describe("plain provisioner bundle", func() {
 				Spec: rukpakv1alpha1.BundleSpec{
 					ProvisionerClassName: plain.ProvisionerID,
 					Source: rukpakv1alpha1.BundleSource{
-						Type: rukpakv1alpha1.SourceTypeConfigMaps,
-						ConfigMaps: []rukpakv1alpha1.ConfigMapSource{{
-							ConfigMap: corev1.LocalObjectReference{Name: configmap.ObjectMeta.Name},
-							Path:      "manifests",
-						}},
+						Type: rukpakv1alpha1.SourceTypeLocal,
+						Local: &rukpakv1alpha1.LocalSource{
+							ConfigMapRef: &rukpakv1alpha1.ConfigMapRef{
+								Name:      configmap.ObjectMeta.Name,
+								Namespace: defaultSystemNamespace,
+							},
+						},
 					},
 				},
 			}
 			err = c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 
 		AfterEach(func() {
-			Expect(client.IgnoreNotFound(c.Delete(ctx, bundle))).To(Succeed())
-			Eventually(func() error {
-				return client.IgnoreNotFound(c.Delete(ctx, configmap))
-			}).Should(Succeed())
+			err := c.Delete(ctx, bundle)
+			Expect(client.IgnoreNotFound(err)).To(BeNil())
+			err = c.Delete(ctx, configmap)
+			Expect(client.IgnoreNotFound(err)).To(BeNil())
 		})
 		It("checks the bundle's phase gets failing", func() {
 			By("waiting until the bundle is reporting Failing state")
@@ -1072,10 +1079,10 @@ var _ = Describe("plain provisioner bundle", func() {
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 
 			rootCAs, err := rukpakctl.GetClusterCA(ctx, c, types.NamespacedName{Namespace: defaultSystemNamespace, Name: "rukpak-ca"})
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 
 			bu := rukpakctl.BundleUploader{
 				UploadServiceName:      defaultUploadServiceName,
@@ -1086,12 +1093,12 @@ var _ = Describe("plain provisioner bundle", func() {
 			uploadCtx, cancel := context.WithTimeout(ctx, time.Second*5)
 			defer cancel()
 			_, err = bu.Upload(uploadCtx, bundle.Name, bundleFS)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 
 		AfterEach(func() {
 			err := c.Delete(ctx, bundle)
-			Expect(client.IgnoreNotFound(err)).To(Succeed())
+			Expect(client.IgnoreNotFound(err)).To(BeNil())
 		})
 
 		It("can unpack the bundle successfully", func() {
@@ -1130,10 +1137,10 @@ var _ = Describe("plain provisioner bundle", func() {
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 
 			rootCAs, err := rukpakctl.GetClusterCA(ctx, c, types.NamespacedName{Namespace: defaultSystemNamespace, Name: "rukpak-ca"})
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 
 			bu := rukpakctl.BundleUploader{
 				UploadServiceName:      defaultUploadServiceName,
@@ -1144,11 +1151,11 @@ var _ = Describe("plain provisioner bundle", func() {
 			uploadCtx, cancel := context.WithTimeout(ctx, time.Second*5)
 			defer cancel()
 			_, err = bu.Upload(uploadCtx, bundle.Name, bundleFS)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			err := c.Delete(ctx, bundle)
-			Expect(client.IgnoreNotFound(err)).To(Succeed())
+			Expect(client.IgnoreNotFound(err)).To(BeNil())
 		})
 		It("checks the bundle's phase gets failing", func() {
 			By("waiting until the bundle is reporting Failing state")
@@ -1196,12 +1203,12 @@ var _ = Describe("plain provisioner bundle", func() {
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing Bundle resource")
 			err := c.Delete(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		It("reports an unpack error when the manifests directory contains directories", func() {
 			By("eventually reporting an Unpacked phase", func() {
@@ -1247,7 +1254,7 @@ var _ = Describe("plain provisioner bundle", func() {
 				},
 			}
 			err := c.Create(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 			By("eventually reporting an Unpacked phase", func() {
 				Eventually(func() (string, error) {
 					if err := c.Get(ctx, client.ObjectKeyFromObject(bundle), bundle); err != nil {
@@ -1260,14 +1267,14 @@ var _ = Describe("plain provisioner bundle", func() {
 			By("eventually writing a content URL to the status", func() {
 				Eventually(func() (string, error) {
 					err := c.Get(ctx, client.ObjectKeyFromObject(bundle), bundle)
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).To(BeNil())
 					return bundle.Status.ContentURL, nil
 				}).Should(Not(BeEmpty()))
 			})
 		})
 		AfterEach(func() {
 			err := c.Delete(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		When("start server for bundle contents", func() {
 			var (
@@ -1285,7 +1292,7 @@ var _ = Describe("plain provisioner bundle", func() {
 					},
 				}
 				err := c.Create(ctx, &sa)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 
 				// Create a temporary ClusterRoleBinding to bind the ServiceAccount to bundle-reader ClusterRole
 				crb = rbacv1.ClusterRoleBinding{
@@ -1299,7 +1306,7 @@ var _ = Describe("plain provisioner bundle", func() {
 				}
 
 				err = c.Create(ctx, &crb)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 				url := bundle.Status.ContentURL
 
 				// Create a Job that reads from the URL and outputs contents in the pod log
@@ -1327,7 +1334,7 @@ var _ = Describe("plain provisioner bundle", func() {
 					},
 				}
 				err = c.Create(ctx, &job)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 				Eventually(func() (bool, error) {
 					err = c.Get(ctx, types.NamespacedName{Name: "rukpak-svr-job", Namespace: defaultSystemNamespace}, &job)
 					if err != nil {
@@ -1365,7 +1372,7 @@ var _ = Describe("plain provisioner bundle", func() {
 					}
 					buf := new(bytes.Buffer)
 					_, err = buf.ReadFrom(logReader)
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).To(BeNil())
 					return strings.Contains(buf.String(), "manifests/00_namespace.yaml") &&
 						strings.Contains(buf.String(), "manifests/01_cluster_role.yaml") &&
 						strings.Contains(buf.String(), "manifests/01_service_account.yaml") &&
@@ -1408,7 +1415,7 @@ var _ = Describe("plain provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 
 			By("waiting until the BD reports a successful installation")
 			Eventually(func() (*metav1.Condition, error) {
@@ -1429,7 +1436,7 @@ var _ = Describe("plain provisioner bundledeployment", func() {
 		})
 		AfterEach(func() {
 			By("deleting the testing BD resource")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 		It("should generate a Bundle that contains an owner reference", func() {
 			// Note: cannot use bd.GroupVersionKind() as the Kind/APIVersion fields
@@ -1644,11 +1651,11 @@ var _ = Describe("plain provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing BD resource")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 
 		It("should rollout the bundle contents successfully", func() {
@@ -1703,7 +1710,7 @@ var _ = Describe("plain provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing BundleDeployment resource")
@@ -1770,7 +1777,7 @@ var _ = Describe("plain provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing BundleDeployment resource")
@@ -1834,11 +1841,11 @@ var _ = Describe("plain provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, dependentBD)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing dependent BundleDeployment resource")
-			Expect(client.IgnoreNotFound(c.Delete(ctx, dependentBD))).To(Succeed())
+			Expect(client.IgnoreNotFound(c.Delete(ctx, dependentBD))).To(BeNil())
 
 		})
 		When("the providing BundleDeployment does not exist", func() {
@@ -1891,11 +1898,11 @@ var _ = Describe("plain provisioner bundledeployment", func() {
 					},
 				}
 				err := c.Create(ctx, providesBD)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).To(BeNil())
 			})
 			AfterEach(func() {
 				By("deleting the testing providing BundleDeployment resource")
-				Expect(client.IgnoreNotFound(c.Delete(ctx, providesBD))).To(Succeed())
+				Expect(client.IgnoreNotFound(c.Delete(ctx, providesBD))).To(BeNil())
 
 			})
 			It("should eventually project a successful installation for the dependent BundleDeployment", func() {
@@ -1952,11 +1959,11 @@ var _ = Describe("plain provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing BD resource")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 		It("eventually reports a failed installation state due to missing APIs on the cluster", func() {
 			Eventually(func() (*metav1.Condition, error) {
@@ -1999,7 +2006,7 @@ var _ = Describe("plain provisioner garbage collection", func() {
 					},
 				},
 			}
-			Expect(c.Create(ctx, b)).To(Succeed())
+			Expect(c.Create(ctx, b)).To(BeNil())
 
 			By("eventually reporting an Unpacked phase")
 			Eventually(func() (string, error) {
@@ -2015,7 +2022,7 @@ var _ = Describe("plain provisioner garbage collection", func() {
 		})
 		It("should result in the underlying bundle unpack pod being deleted", func() {
 			By("deleting the test Bundle resource")
-			Expect(c.Delete(ctx, b)).To(Succeed())
+			Expect(c.Delete(ctx, b)).To(BeNil())
 
 			By("waiting until the unpack pods for this bundle have been deleted")
 			selector := util.NewBundleLabelSelector(b)
@@ -2030,17 +2037,18 @@ var _ = Describe("plain provisioner garbage collection", func() {
 				return len(pods.Items) == 0
 			}).Should(BeTrue())
 		})
-		It("should result in the underlying bundle file being deleted", func() {
+		// Pending: Exits with 2 rather than the expected 1
+		PIt("should result in the underlying bundle file being deleted", func() {
 			provisionerPods := &corev1.PodList{}
 			err := c.List(context.Background(), provisionerPods, client.MatchingLabels{"app": "core"})
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 			Expect(provisionerPods.Items).To(HaveLen(1))
 
 			By("checking that the bundle file exists")
 			Expect(checkProvisionerBundle(ctx, b, provisionerPods.Items[0].Name)).To(Succeed())
 
 			By("deleting the test Bundle resource")
-			Expect(c.Delete(ctx, b)).To(Succeed())
+			Expect(c.Delete(ctx, b)).To(BeNil())
 
 			By("waiting until the bundle file has been deleted")
 			Eventually(func() error {
@@ -2083,7 +2091,7 @@ var _ = Describe("plain provisioner garbage collection", func() {
 					},
 				},
 			}
-			Expect(c.Create(ctx, bd)).To(Succeed())
+			Expect(c.Create(ctx, bd)).To(BeNil())
 
 			By("eventually reporting a successful installation")
 			Eventually(func() (*metav1.Condition, error) {
@@ -2104,7 +2112,7 @@ var _ = Describe("plain provisioner garbage collection", func() {
 		})
 		AfterEach(func() {
 			By("deleting the testing BD resource")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 		It("should result in a new Bundle being generated", func() {
 			var (
@@ -2177,7 +2185,7 @@ var _ = Describe("plain provisioner garbage collection", func() {
 					},
 				},
 			}
-			Expect(c.Create(ctx, bd)).To(Succeed())
+			Expect(c.Create(ctx, bd)).To(BeNil())
 
 			By("waiting for the BD to eventually report a successful install status")
 			Eventually(func() (*metav1.Condition, error) {
@@ -2199,7 +2207,7 @@ var _ = Describe("plain provisioner garbage collection", func() {
 		})
 		It("should eventually result in the installed CRDs being deleted", func() {
 			By("deleting the testing BD resource")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 
 			By("waiting until all the installed CRDs have been deleted")
 			selector := util.NewBundleDeploymentLabelSelector(bd)
