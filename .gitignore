@@ -12,5 +12,9 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-bin
-.github
+#vendor/
+bin/
+dist/
+
+# Release artifacts
+rukpak.yaml
