@@ -6,6 +6,10 @@ resources:
 namespace: openshift-rukpak
 
 patches:
+- path: ./patches/core_deployment.yaml
+- path: ./patches/helm_provisioner_deployment.yaml
+- path: ./patches/webhook_deployment.yaml
+- path: ./patches/namespace.yaml
 - target: 
     group: admissionregistration.k8s.io
     version: v1

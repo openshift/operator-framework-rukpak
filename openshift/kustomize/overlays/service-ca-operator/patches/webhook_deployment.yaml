@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: webhooks
+  name: rukpak-webhooks
+  namespace: rukpak-system
+spec:
+  template:
+    metadata:
+      annotations:
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+    spec:
+      priorityClassName: system-cluster-critical
