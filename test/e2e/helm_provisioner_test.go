@@ -52,11 +52,11 @@ var _ = Describe("helm provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing resources")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 
 		It("should rollout the bundle contents successfully", func() {
@@ -109,7 +109,7 @@ var _ = Describe("helm provisioner bundledeployment", func() {
 				}).Should(Succeed())
 
 				By("deleting the deployment resource in the helm chart")
-				Expect(c.Delete(ctx, deployment)).To(Succeed())
+				Expect(c.Delete(ctx, deployment)).To(BeNil())
 
 				By("verifying the deleted deployment resource in the helm chart gets recreated")
 				Eventually(func() (*appsv1.DeploymentCondition, error) {
@@ -166,11 +166,11 @@ var _ = Describe("helm provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing resources")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 
 		It("should fail rolling out the bundle contents", func() {
@@ -222,11 +222,11 @@ var _ = Describe("helm provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing resources")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 
 		It("should fail rolling out the bundle contents", func() {
@@ -278,11 +278,11 @@ var _ = Describe("helm provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing resources")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 
 		It("should fail rolling out the bundle contents", func() {
@@ -338,11 +338,11 @@ var _ = Describe("helm provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing resources")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 
 		It("should rollout the bundle contents successfully", func() {
@@ -402,7 +402,7 @@ var _ = Describe("helm provisioner bundledeployment", func() {
 				}).Should(Succeed())
 
 				By("deleting the deployment resource in the helm chart")
-				Expect(c.Delete(ctx, deployment)).To(Succeed())
+				Expect(c.Delete(ctx, deployment)).To(BeNil())
 
 				By("verifying the deleted deployment resource in the helm chart gets recreated")
 				Eventually(func() (*appsv1.DeploymentCondition, error) {
@@ -462,11 +462,11 @@ var _ = Describe("helm provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing resources")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 
 		It("should rollout the bundle contents successfully", func() {
@@ -522,11 +522,11 @@ var _ = Describe("helm provisioner bundledeployment", func() {
 				},
 			}
 			err := c.Create(ctx, bd)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			By("deleting the testing resources")
-			Expect(c.Delete(ctx, bd)).To(Succeed())
+			Expect(c.Delete(ctx, bd)).To(BeNil())
 		})
 
 		It("should rollout the bundle contents successfully", func() {

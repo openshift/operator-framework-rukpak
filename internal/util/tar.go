@@ -59,5 +59,8 @@ func FSToTarGZ(w io.Writer, fsys fs.FS) error {
 	if err := tw.Close(); err != nil {
 		return err
 	}
-	return gzw.Close()
+	if err := gzw.Close(); err != nil {
+		return err
+	}
+	return nil
 }

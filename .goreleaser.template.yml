@@ -1,0 +1,148 @@
+env:
+- GOPROXY=https://proxy.golang.org|direct
+- GO111MODULE=on
+- CGO_ENABLED=0
+- PKG=github.com/operator-framework/rukpak/internal/version
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+builds:
+  - id: unpack
+    main: ./cmd/unpack
+    binary: unpack
+    tags: $GO_BUILD_TAGS
+    goos:
+    - linux
+    goarch:
+    - amd64
+    - arm64
+    - ppc64le
+    - s390x
+    ldflags:
+    - -X {{ .Env.PKG }}.GitCommit={{ .ShortCommit }}
+  - id: helm
+    main: ./cmd/helm
+    binary: helm
+    tags: $GO_BUILD_TAGS
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - ppc64le
+      - s390x
+    ldflags:
+      - -X {{ .Env.PKG }}.GitCommit={{ .ShortCommit }}
+  - id: core
+    main: ./cmd/core
+    binary: core
+    tags: $GO_BUILD_TAGS
+    goos:
+    - linux
+    goarch:
+    - amd64
+    - arm64
+    - ppc64le
+    - s390x
+    ldflags:
+    - -X {{ .Env.PKG }}.GitCommit={{ .ShortCommit }}
+  - id: webhooks
+    main: ./cmd/webhooks
+    binary: webhooks
+    tags: $GO_BUILD_TAGS
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - ppc64le
+      - s390x
+    ldflags:
+      - -X {{ .Env.PKG }}.GitCommit={{ .ShortCommit }}
+  - id: crdvalidator
+    main: ./cmd/crdvalidator
+    binary: crdvalidator
+    tags: $GO_BUILD_TAGS
+    goos:
+    - linux
+    goarch:
+    - amd64
+    - arm64
+    - ppc64le
+    - s390x
+    ldflags:
+    - -X {{ .Env.PKG }}.GitCommit={{ .ShortCommit }}
+  - id: rukpakctl
+    main: ./cmd/rukpakctl
+    binary: rukpakctl
+    tags: $GO_BUILD_TAGS
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - ppc64le
+      - s390x
+    ldflags:
+      - -X {{ .Env.PKG }}.GitCommit={{ .ShortCommit }}
+dockers:
+- image_templates:
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-amd64"
+  dockerfile: Dockerfile
+  use: buildx
+  goos: linux
+  goarch: amd64
+  build_flag_templates:
+  - --platform=linux/amd64
+- image_templates:
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-arm64"
+  dockerfile: Dockerfile
+  use: buildx
+  goos: linux
+  goarch: arm64
+  build_flag_templates:
+  - --platform=linux/arm64
+- image_templates:
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-ppc64le"
+  dockerfile: Dockerfile
+  use: buildx
+  goos: linux
+  goarch: ppc64le
+  build_flag_templates:
+  - --platform=linux/ppc64le
+- image_templates:
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-s390x"
+  dockerfile: Dockerfile
+  use: buildx
+  goos: linux
+  goarch: s390x
+  build_flag_templates:
+  - --platform=linux/s390x
+docker_manifests:
+- name_template: "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}"
+  image_templates:
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-amd64"
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-arm64"
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-ppc64le"
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-s390x"
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  use: github-native
+  skip: $DISABLE_RELEASE_PIPELINE
+release:
+  disable: $DISABLE_RELEASE_PIPELINE
+  extra_files:
+  - glob: 'rukpak.yaml'
+  header: |
+    ## Installation
+
+    ```bash
+    kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/{{ .Env.CERT_MGR_VERSION }}/cert-manager.yaml
+    kubectl wait --for=condition=Available --namespace=cert-manager deployment/cert-manager-webhook --timeout=60s
+    kubectl apply -f https://github.com/operator-framework/rukpak/releases/download/{{ .Tag }}/rukpak.yaml
+    kubectl wait --for=condition=Available --namespace=rukpak-system deployment/core --timeout=60s
+    kubectl wait --for=condition=Available --namespace=rukpak-system deployment/rukpak-webhooks --timeout=60s

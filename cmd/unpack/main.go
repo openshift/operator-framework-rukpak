@@ -36,7 +36,7 @@ func main() {
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if rukpakVersion {
-				fmt.Println(version.String())
+				fmt.Printf("Git commit: %s\n", version.String())
 				os.Exit(0)
 			}
 			var err error

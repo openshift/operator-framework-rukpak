@@ -43,10 +43,10 @@ var _ = Describe("bundle api validating webhook", func() {
 		AfterEach(func() {
 			By("deleting the testing Bundle resource")
 			err := c.Delete(ctx, bundle)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 		It("should create the bundle resource", func() {
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).To(BeNil())
 		})
 	})
 	When("the bundle source type is git and git properties are not set", func() {
