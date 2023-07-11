@@ -1,0 +1,4 @@
+resources:
+- ./webhooks
+
+namespace: rukpak-system

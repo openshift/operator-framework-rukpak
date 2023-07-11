@@ -1,0 +1,5 @@
+resources:
+  - ./apis
+  - ./core
+  - ./crdvalidator
+  - ./provisioners
