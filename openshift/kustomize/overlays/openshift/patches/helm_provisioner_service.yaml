@@ -1,0 +1,5 @@
+kind: Service
+metadata:
+  name: helm-provisioner
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: helm-provisioner-cert

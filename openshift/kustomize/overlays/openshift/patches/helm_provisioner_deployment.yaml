@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: helm-provisioner
+  name: helm-provisioner
+  namespace: rukpak-system
+spec:
+  template:
+    metadata:
+      annotations:
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+    spec:
+      priorityClassName: system-cluster-critical
