@@ -562,7 +562,7 @@ github.com/munnerz/goautoneg
 # github.com/nlepage/go-tarfs v1.2.1
 ## explicit; go 1.17
 github.com/nlepage/go-tarfs
-# github.com/onsi/ginkgo/v2 v2.12.1
+# github.com/onsi/ginkgo/v2 v2.13.0
 ## explicit; go 1.18
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
