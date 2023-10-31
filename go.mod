@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-git/go-billy/v5 v5.5.0
-	github.com/go-git/go-git/v5 v5.9.0
+	github.com/go-git/go-git/v5 v5.10.0
 	github.com/go-logr/logr v1.2.4
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
