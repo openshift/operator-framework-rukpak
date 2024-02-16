@@ -224,7 +224,7 @@ KUSTOMIZE_VERSION ?= v3.8.7
 CONTROLLER_TOOLS_VERSION ?= v0.9.0
 SETUP_ENVTEST_VERSION ?= cd0058a # v0.12.3
 GINKGO_VERSION ?= v2.1.4
-GOLANGCI_LINT_VERSION ?= v1.46.0
+GOLANGCI_LINT_VERSION ?= v1.51.1
 KIND_VERSION ?= v0.14.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
