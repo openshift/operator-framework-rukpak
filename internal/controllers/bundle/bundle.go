@@ -13,12 +13,10 @@ import (
 	apimacherrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	crfinalizer "sigs.k8s.io/controller-runtime/pkg/finalizer"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	crsource "sigs.k8s.io/controller-runtime/pkg/source"
 
 	rukpakv1alpha1 "github.com/operator-framework/rukpak/api/v1alpha1"
 	"github.com/operator-framework/rukpak/internal/source"
@@ -58,7 +56,7 @@ func WithFinalizers(f crfinalizer.Finalizers) Option {
 	}
 }
 
-func SetupWithManager(mgr manager.Manager, systemNsCache cache.Cache, systemNamespace string, opts ...Option) error {
+func SetupWithManager(mgr manager.Manager, systemNamespace string, opts ...Option) error {
 	c := &controller{
 		cl: mgr.GetClient(),
 	}
@@ -83,8 +81,8 @@ func SetupWithManager(mgr manager.Manager, systemNsCache cache.Cache, systemName
 		// The default image source unpacker creates Pod's ownerref'd to its bundle, so
 		// we need to watch pods to ensure we reconcile events coming from these
 		// pods.
-		Watches(crsource.NewKindWithCache(&corev1.Pod{}, systemNsCache), util.MapOwneeToOwnerProvisionerHandler(context.Background(), mgr.GetClient(), l, c.provisionerID, &rukpakv1alpha1.Bundle{})).
-		Watches(crsource.NewKindWithCache(&corev1.ConfigMap{}, systemNsCache), util.MapConfigMapToBundlesHandler(context.Background(), mgr.GetClient(), systemNamespace, c.provisionerID)).
+		Watches(&corev1.Pod{}, util.MapOwneeToOwnerProvisionerHandler(mgr.GetClient(), l, c.provisionerID, &rukpakv1alpha1.Bundle{})).
+		Watches(&corev1.ConfigMap{}, util.MapConfigMapToBundlesHandler(mgr.GetClient(), systemNamespace, c.provisionerID)).
 		Complete(c)
 }
 

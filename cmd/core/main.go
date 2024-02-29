@@ -35,13 +35,15 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"k8s.io/kube-aggregator/pkg/apis/apiregistration"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	crfinalizer "sigs.k8s.io/controller-runtime/pkg/finalizer"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	rukpakv1alpha1 "github.com/operator-framework/rukpak/api/v1alpha1"
 	"github.com/operator-framework/rukpak/internal/controllers/bundle"
@@ -128,41 +130,6 @@ func main() {
 		systemNamespace = util.PodNamespace()
 	}
 
-	systemNsCluster, err := cluster.New(cfg, func(opts *cluster.Options) {
-		opts.Scheme = scheme
-		opts.Namespace = systemNamespace
-	})
-	if err != nil {
-		setupLog.Error(err, "unable to create system namespace cluster")
-		os.Exit(1)
-	}
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     httpBindAddr,
-		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "core.rukpak.io",
-		NewCache: cache.BuilderWithOptions(cache.Options{
-			SelectorsByObject: cache.SelectorsByObject{
-				&rukpakv1alpha1.BundleDeployment{}: {},
-				&rukpakv1alpha1.Bundle{}:           {},
-			},
-			DefaultSelector: cache.ObjectSelector{
-				Label: dependentSelector,
-			},
-		}),
-	})
-	if err != nil {
-		setupLog.Error(err, "unable to create manager")
-		os.Exit(1)
-	}
-
-	if err := mgr.Add(systemNsCluster); err != nil {
-		setupLog.Error(err, "unable to add system namespace cluster to manager")
-		os.Exit(1)
-	}
-
 	storageURL, err := url.Parse(fmt.Sprintf("%s/bundles/", httpExternalAddr))
 	if err != nil {
 		setupLog.Error(err, "unable to parse bundle content server URL")
@@ -172,6 +139,63 @@ func main() {
 	localStorage := &storage.LocalDirectory{
 		RootDirectory: provisionerStorageDirectory,
 		URL:           *storageURL,
+	}
+
+	cacheOptions := cache.Options{
+		Scheme: scheme,
+		ByObject: map[client.Object]cache.ByObject{
+			&rukpakv1alpha1.BundleDeployment{}: {},
+			&rukpakv1alpha1.Bundle{}:           {},
+		},
+		DefaultNamespaces: map[string]cache.Config{
+			systemNamespace:     {},
+			cache.AllNamespaces: {LabelSelector: dependentSelector},
+		},
+	}
+	c, err := cache.New(cfg, cacheOptions)
+	if err != nil {
+		setupLog.Error(err, "unable to create cache for the manager")
+		os.Exit(1)
+	}
+
+	clientOptions := client.Options{
+		Scheme: scheme,
+		Cache: &client.CacheOptions{
+			Reader: c,
+		},
+	}
+	cl, err := client.New(cfg, clientOptions)
+	if err != nil {
+		setupLog.Error(err, "unable to create client for the manager")
+		os.Exit(1)
+	}
+
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme,
+		NewCache: func(_ *rest.Config, _ cache.Options) (cache.Cache, error) {
+			return c, nil
+		},
+		NewClient: func(_ *rest.Config, _ client.Options) (client.Client, error) {
+			return cl, nil
+		},
+		Metrics: server.Options{
+			BindAddress: httpBindAddr,
+			ExtraHandlers: map[string]http.Handler{
+				// NOTE: ExtraHandlers aren't actually metrics-specific. We can run
+				// whatever handlers we want on the existing webserver that
+				// controller-runtime runs when MetricsBindAddress is configured on the
+				// manager.
+				"/bundles/": httpLogger(localStorage),
+				"/uploads/": httpLogger(uploadmgr.NewUploadHandler(cl, uploadStorageDirectory)),
+			},
+		},
+		HealthProbeBindAddress: probeAddr,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "core.rukpak.io",
+	})
+	if err != nil {
+		setupLog.Error(err, "unable to create manager")
+		os.Exit(1)
 	}
 
 	var rootCAs *x509.CertPool
@@ -189,18 +213,6 @@ func main() {
 	)
 	bundleStorage := storage.WithFallbackLoader(localStorage, httpLoader)
 
-	// NOTE: AddMetricsExtraHandler isn't actually metrics-specific. We can run
-	// whatever handlers we want on the existing webserver that
-	// controller-runtime runs when MetricsBindAddress is configured on the
-	// manager.
-	if err := mgr.AddMetricsExtraHandler("/bundles/", httpLogger(localStorage)); err != nil {
-		setupLog.Error(err, "unable to add bundles http handler to manager")
-		os.Exit(1)
-	}
-	if err := mgr.AddMetricsExtraHandler("/uploads/", httpLogger(uploadmgr.NewUploadHandler(mgr.GetClient(), uploadStorageDirectory))); err != nil {
-		setupLog.Error(err, "unable to add uploads http handler to manager")
-		os.Exit(1)
-	}
 	if err := mgr.Add(uploadmgr.NewBundleGC(mgr.GetCache(), uploadStorageDirectory, uploadStorageSyncInterval)); err != nil {
 		setupLog.Error(err, "unable to add bundle garbage collector to manager")
 		os.Exit(1)
@@ -225,7 +237,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	unpacker, err := source.NewDefaultUnpacker(systemNsCluster, systemNamespace, unpackImage, baseUploadManagerURL, rootCAs)
+	unpacker, err := source.NewDefaultUnpacker(mgr, systemNamespace, unpackImage, baseUploadManagerURL, rootCAs)
 	if err != nil {
 		setupLog.Error(err, "unable to setup bundle unpacker")
 		os.Exit(1)
@@ -237,15 +249,23 @@ func main() {
 		bundle.WithStorage(bundleStorage),
 	}
 
-	cfgGetter := helmclient.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper(), mgr.GetLogger())
-	acg := helmclient.NewActionClientGetter(cfgGetter)
+	cfgGetter, err := helmclient.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper(), mgr.GetLogger())
+	if err != nil {
+		setupLog.Error(err, "unable to create action config getter")
+		os.Exit(1)
+	}
+	acg, err := helmclient.NewActionClientGetter(cfgGetter)
+	if err != nil {
+		setupLog.Error(err, "unable to create action client getter")
+		os.Exit(1)
+	}
 	commonBDProvisionerOptions := []bundledeployment.Option{
 		bundledeployment.WithReleaseNamespace(systemNamespace),
 		bundledeployment.WithActionClientGetter(acg),
 		bundledeployment.WithStorage(bundleStorage),
 	}
 
-	if err := bundle.SetupWithManager(mgr, systemNsCluster.GetCache(), systemNamespace, append(
+	if err := bundle.SetupWithManager(mgr, systemNamespace, append(
 		commonBundleProvisionerOptions,
 		bundle.WithProvisionerID(plain.ProvisionerID),
 		bundle.WithHandler(bundle.HandlerFunc(plain.HandleBundle)),
@@ -254,7 +274,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := bundle.SetupWithManager(mgr, systemNsCluster.GetCache(), systemNamespace, append(
+	if err := bundle.SetupWithManager(mgr, systemNamespace, append(
 		commonBundleProvisionerOptions,
 		bundle.WithProvisionerID(registry.ProvisionerID),
 		bundle.WithHandler(bundle.HandlerFunc(registry.HandleBundle)),

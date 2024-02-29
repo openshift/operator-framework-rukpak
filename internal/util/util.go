@@ -122,8 +122,8 @@ type ProvisionerClassNameGetter interface {
 // MapOwneeToOwnerProvisionerHandler is a handler implementation that finds an owner reference in the event object that
 // references the provided owner. If a reference for the provided owner is found AND that owner's provisioner class name
 // matches the provided provisionerClassName, this handler enqueues a request for that owner to be reconciled.
-func MapOwneeToOwnerProvisionerHandler(ctx context.Context, cl client.Client, log logr.Logger, provisionerClassName string, owner ProvisionerClassNameGetter) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+func MapOwneeToOwnerProvisionerHandler(cl client.Client, log logr.Logger, provisionerClassName string, owner ProvisionerClassNameGetter) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
 		ownerGVK, err := apiutil.GVKForObject(owner, cl.Scheme())
 		if err != nil {
 			log.Error(err, "map ownee to owner: lookup GVK for owner")
@@ -211,8 +211,8 @@ func MapBundleToBundleDeployment(ctx context.Context, c client.Client, b rukpakv
 // standalone resource, then no BundleDeployment will be returned as static creation of Bundle
 // resources is not a supported workflow right now. The provisionerClassName parameter is used
 // to filter out BundleDeployments that the caller shouldn't be watching.
-func MapBundleToBundleDeploymentHandler(ctx context.Context, cl client.Client, provisionerClassName string) handler.MapFunc {
-	return func(object client.Object) []reconcile.Request {
+func MapBundleToBundleDeploymentHandler(cl client.Client, provisionerClassName string) handler.MapFunc {
+	return func(ctx context.Context, object client.Object) []reconcile.Request {
 		b := object.(*rukpakv1alpha1.Bundle)
 
 		managingBD := MapBundleToBundleDeployment(ctx, cl, *b)
@@ -242,8 +242,8 @@ func MapConfigMapToBundles(ctx context.Context, cl client.Client, cmNamespace st
 	}
 	return bs
 }
-func MapConfigMapToBundlesHandler(ctx context.Context, cl client.Client, configMapNamespace string, provisionerClassName string) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+func MapConfigMapToBundlesHandler(cl client.Client, configMapNamespace string, provisionerClassName string) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object client.Object) []reconcile.Request {
 		cm := object.(*corev1.ConfigMap)
 		var requests []reconcile.Request
 		matchingBundles := MapConfigMapToBundles(ctx, cl, configMapNamespace, *cm)
@@ -403,15 +403,15 @@ func CreateOrRecreate(ctx context.Context, cl client.Client, obj client.Object, 
 		return controllerutil.OperationResultNone, nil
 	}
 
-	if err := wait.PollImmediateUntil(time.Millisecond*5, func() (bool, error) {
-		if err := cl.Delete(ctx, obj); err != nil {
+	if err := wait.PollUntilContextCancel(ctx, time.Millisecond*5, true, func(conditionCtx context.Context) (bool, error) {
+		if err := cl.Delete(conditionCtx, obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
 			}
 			return false, err
 		}
 		return false, nil
-	}, ctx.Done()); err != nil {
+	}); err != nil {
 		return controllerutil.OperationResultNone, err
 	}
 

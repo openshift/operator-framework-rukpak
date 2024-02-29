@@ -169,13 +169,13 @@ func content(ctx context.Context, opt options, args []string) error {
 	}
 
 	// Wait for Job completion
-	if err := wait.PollImmediateUntil(time.Second, func() (bool, error) {
-		deployedJob, err := opt.BatchV1().Jobs(opt.namespace).Get(ctx, job.ObjectMeta.Name, metav1.GetOptions{})
+	if err := wait.PollUntilContextCancel(ctx, time.Second, true, func(conditionCtx context.Context) (bool, error) {
+		deployedJob, err := opt.BatchV1().Jobs(opt.namespace).Get(conditionCtx, job.ObjectMeta.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("failed to get a job: %v", err)
 		}
 		return deployedJob.Status.CompletionTime != nil, nil
-	}, ctx.Done()); err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed waiting for job to complete: %v", err)
 	}
 
