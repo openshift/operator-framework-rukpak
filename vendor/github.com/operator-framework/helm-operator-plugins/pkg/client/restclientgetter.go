@@ -28,27 +28,26 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-var _ genericclioptions.RESTClientGetter = &restClientGetter{}
-
-func newRESTClientGetter(cfg *rest.Config, rm meta.RESTMapper, ns string) genericclioptions.RESTClientGetter {
-	return &restClientGetter{
-		restConfig:      cfg,
-		restMapper:      rm,
-		namespaceConfig: &namespaceClientConfig{ns},
+func newRESTClientGetter(cfg *rest.Config, rm meta.RESTMapper, ns string) *namespacedRCG {
+	return &namespacedRCG{
+		restClientGetter: &restClientGetter{
+			restConfig: cfg,
+			restMapper: rm,
+		},
+		namespaceConfig: namespaceClientConfig{ns},
 	}
 }
 
 type restClientGetter struct {
-	restConfig      *rest.Config
-	restMapper      meta.RESTMapper
-	namespaceConfig clientcmd.ClientConfig
+	restConfig *rest.Config
+	restMapper meta.RESTMapper
 
 	setupDiscoveryClient  sync.Once
 	cachedDiscoveryClient discovery.CachedDiscoveryInterface
 }
 
 func (c *restClientGetter) ToRESTConfig() (*rest.Config, error) {
-	return c.restConfig, nil
+	return rest.CopyConfig(c.restConfig), nil
 }
 
 func (c *restClientGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
@@ -73,7 +72,21 @@ func (c *restClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
 	return c.restMapper, nil
 }
 
-func (c *restClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
+func (c *restClientGetter) ForNamespace(ns string) genericclioptions.RESTClientGetter {
+	return &namespacedRCG{
+		restClientGetter: c,
+		namespaceConfig:  namespaceClientConfig{namespace: ns},
+	}
+}
+
+var _ genericclioptions.RESTClientGetter = &namespacedRCG{}
+
+type namespacedRCG struct {
+	*restClientGetter
+	namespaceConfig namespaceClientConfig
+}
+
+func (c *namespacedRCG) ToRawKubeConfigLoader() clientcmd.ClientConfig {
 	return c.namespaceConfig
 }
 
