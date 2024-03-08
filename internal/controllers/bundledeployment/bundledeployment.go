@@ -27,6 +27,7 @@ import (
 	apimachyaml "k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	crcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -93,6 +94,7 @@ func WithReleaseNamespace(releaseNamespace string) Option {
 func SetupWithManager(mgr manager.Manager, opts ...Option) error {
 	c := &controller{
 		cl:               mgr.GetClient(),
+		cache:            mgr.GetCache(),
 		dynamicWatchGVKs: map[schema.GroupVersionKind]struct{}{},
 	}
 
@@ -110,8 +112,8 @@ func SetupWithManager(mgr manager.Manager, opts ...Option) error {
 		For(&rukpakv1alpha1.BundleDeployment{}, builder.WithPredicates(
 			util.BundleDeploymentProvisionerFilter(c.provisionerID)),
 		).
-		Watches(&source.Kind{Type: &rukpakv1alpha1.Bundle{}}, handler.EnqueueRequestsFromMapFunc(
-			util.MapBundleToBundleDeploymentHandler(context.Background(), mgr.GetClient(), c.provisionerID)),
+		Watches(&rukpakv1alpha1.Bundle{}, handler.EnqueueRequestsFromMapFunc(
+			util.MapBundleToBundleDeploymentHandler(mgr.GetClient(), c.provisionerID)),
 		).
 		Build(c)
 	if err != nil {
@@ -143,7 +145,8 @@ func (c *controller) validateConfig() error {
 
 // controller reconciles a BundleDeployment object
 type controller struct {
-	cl client.Client
+	cl    client.Client
+	cache cache.Cache
 
 	handler          Handler
 	provisionerID    string
@@ -349,8 +352,8 @@ func (c *controller) reconcile(ctx context.Context, bd *rukpakv1alpha1.BundleDep
 			_, isWatched := c.dynamicWatchGVKs[unstructuredObj.GroupVersionKind()]
 			if !isWatched {
 				if err := c.controller.Watch(
-					&source.Kind{Type: unstructuredObj},
-					&handler.EnqueueRequestForOwner{OwnerType: bd, IsController: true},
+					source.Kind(c.cache, unstructuredObj),
+					handler.EnqueueRequestForOwner(c.cl.Scheme(), c.cl.RESTMapper(), bd, handler.OnlyControllerOwner()),
 					helmpredicate.DependentPredicateFuncs()); err != nil {
 					return err
 				}

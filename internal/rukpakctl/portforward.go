@@ -60,8 +60,8 @@ func (pf *ServicePortForwarder) Start(ctx context.Context) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	var subset corev1.EndpointSubset
-	if err := wait.PollImmediateUntil(time.Second*1, func() (bool, error) {
-		endpoints, err := pf.cl.CoreV1().Endpoints(pf.serviceNamespace).Get(ctx, pf.serviceName, metav1.GetOptions{})
+	if err := wait.PollUntilContextCancel(ctx, time.Second*1, true, func(conditionCtx context.Context) (bool, error) {
+		endpoints, err := pf.cl.CoreV1().Endpoints(pf.serviceNamespace).Get(conditionCtx, pf.serviceName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -71,7 +71,7 @@ func (pf *ServicePortForwarder) Start(ctx context.Context) error {
 		}
 		subset = endpoints.Subsets[0]
 		return true, nil
-	}, ctx.Done()); err != nil {
+	}); err != nil {
 		if errors.Is(err, ctx.Err()) {
 			return fmt.Errorf("could not find available endpoint for %s service", pf.serviceName)
 		}

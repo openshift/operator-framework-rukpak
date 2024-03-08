@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	rukpakv1alpha1 "github.com/operator-framework/rukpak/api/v1alpha1"
@@ -876,7 +876,7 @@ var _ = Describe("plain provisioner bundle", func() {
 					Namespace:    defaultSystemNamespace,
 				},
 				Data:      data,
-				Immutable: pointer.Bool(true),
+				Immutable: ptr.To(true),
 			}
 			err = c.Create(ctx, configmap)
 			Expect(err).ToNot(HaveOccurred())
@@ -1003,7 +1003,7 @@ var _ = Describe("plain provisioner bundle", func() {
 					Namespace:    defaultSystemNamespace,
 				},
 				Data:      data,
-				Immutable: pointer.Bool(true),
+				Immutable: ptr.To(true),
 			}
 			err = c.Create(ctx, configmap)
 			Expect(err).ToNot(HaveOccurred())
@@ -1885,7 +1885,7 @@ var _ = Describe("plain provisioner bundledeployment", func() {
 					WithTransform(func(c *metav1.Condition) metav1.ConditionStatus { return c.Status }, Equal(metav1.ConditionFalse)),
 					WithTransform(func(c *metav1.Condition) string { return c.Reason }, Equal(rukpakv1alpha1.ReasonInstallFailed)),
 					WithTransform(func(c *metav1.Condition) string { return c.Message },
-						ContainSubstring(`required resource not found`)),
+						ContainSubstring(`no matches for kind "OperatorGroup" in version "operators.coreos.com/v1"`)),
 				))
 			})
 		})

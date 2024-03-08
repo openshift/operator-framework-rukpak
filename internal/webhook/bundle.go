@@ -44,43 +44,43 @@ type Bundle struct {
 //+kubebuilder:webhook:path=/validate-core-rukpak-io-v1alpha1-bundle,mutating=false,failurePolicy=fail,sideEffects=None,groups=core.rukpak.io,resources=bundles,verbs=create;update,versions=v1alpha1,name=vbundles.core.rukpak.io,admissionReviewVersions=v1
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (b *Bundle) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (b *Bundle) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	bundle := obj.(*rukpakv1alpha1.Bundle)
 	return b.checkBundleSource(ctx, bundle)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (b *Bundle) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) error {
+func (b *Bundle) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
 	oldBundle := oldObj.(*rukpakv1alpha1.Bundle)
 	newBundle := newObj.(*rukpakv1alpha1.Bundle)
 	if err := checkImmutableSpec(oldBundle, newBundle); err != nil {
-		return err
+		return nil, err
 	}
 
 	return b.checkBundleSource(ctx, newBundle)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (b *Bundle) ValidateDelete(_ context.Context, _ runtime.Object) error {
-	return nil
+func (b *Bundle) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
-func (b *Bundle) checkBundleSource(ctx context.Context, bundle *rukpakv1alpha1.Bundle) error {
+func (b *Bundle) checkBundleSource(ctx context.Context, bundle *rukpakv1alpha1.Bundle) (admission.Warnings, error) {
 	switch typ := bundle.Spec.Source.Type; typ {
 	case rukpakv1alpha1.SourceTypeImage:
 		if bundle.Spec.Source.Image == nil {
-			return fmt.Errorf("bundle.spec.source.image must be set for source type \"image\"")
+			return nil, fmt.Errorf("bundle.spec.source.image must be set for source type \"image\"")
 		}
 	case rukpakv1alpha1.SourceTypeGit:
 		if bundle.Spec.Source.Git == nil {
-			return fmt.Errorf("bundle.spec.source.git must be set for source type \"git\"")
+			return nil, fmt.Errorf("bundle.spec.source.git must be set for source type \"git\"")
 		}
 		if strings.HasPrefix(filepath.Clean(bundle.Spec.Source.Git.Directory), "../") {
-			return fmt.Errorf(`bundle.spec.source.git.directory begins with "../": directory must define path within the repository`)
+			return nil, fmt.Errorf(`bundle.spec.source.git.directory begins with "../": directory must define path within the repository`)
 		}
 	case rukpakv1alpha1.SourceTypeConfigMaps:
 		if len(bundle.Spec.Source.ConfigMaps) == 0 {
-			return fmt.Errorf(`bundle.spec.source.configmaps must be set for source type "configmaps"`)
+			return nil, fmt.Errorf(`bundle.spec.source.configmaps must be set for source type "configmaps"`)
 		}
 		errs := []error{}
 		for i, cmSource := range bundle.Spec.Source.ConfigMaps {
@@ -92,10 +92,10 @@ func (b *Bundle) checkBundleSource(ctx context.Context, bundle *rukpakv1alpha1.B
 			}
 		}
 		if len(errs) > 0 {
-			return utilerrors.NewAggregate(errs)
+			return nil, utilerrors.NewAggregate(errs)
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func checkImmutableSpec(oldBundle, newBundle *rukpakv1alpha1.Bundle) error {
@@ -118,7 +118,7 @@ func (b *Bundle) verifyConfigMapImmutable(ctx context.Context, configMapName str
 }
 
 func (b *Bundle) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	mgr.GetWebhookServer().Register("/validate-core-rukpak-io-v1alpha1-bundle", admission.WithCustomValidator(&rukpakv1alpha1.Bundle{}, b).WithRecoverPanic(true))
+	mgr.GetWebhookServer().Register("/validate-core-rukpak-io-v1alpha1-bundle", admission.WithCustomValidator(mgr.GetScheme(), &rukpakv1alpha1.Bundle{}, b).WithRecoverPanic(true))
 	return nil
 }
 
