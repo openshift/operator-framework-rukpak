@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/ocp/builder:rhel-8-golang-1.21-openshift-4.16 AS builder
+FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.21-openshift-4.16 AS builder
 
 # copy just enough of the git repo to parse HEAD, used to record version in OLM binaries
 COPY .git/HEAD .git/HEAD
@@ -13,7 +13,7 @@ WORKDIR /build
 COPY . .
 RUN make build
 
-FROM registry.ci.openshift.org/ocp/4.16:base
+FROM registry.ci.openshift.org/ocp/4.16:base-rhel9
 
 COPY --from=builder /build/bin/core /
 COPY --from=builder /build/bin/unpack /

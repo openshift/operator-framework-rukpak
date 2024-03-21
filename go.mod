@@ -2,7 +2,7 @@ module github.com/operator-framework/rukpak
 
 go 1.21
 
-toolchain go1.21.0
+toolchain go1.21.7
 
 require (
 	github.com/go-git/go-billy/v5 v5.5.0
