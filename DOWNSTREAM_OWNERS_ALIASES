@@ -1,22 +1,19 @@
 aliases:
   # contributors who can approve any PRs in the repo
   rukpak-approvers:
-  - awgreene
   - grokspawn
-  - jmprusi
   - joelanford
   - kevinrizza
   - oceanc80
   - perdasilva
+  - m1kola
 
   # contributors who can review/lgtm any PRs in the repo
   rukpak-reviewers:
   - anik120
   - ankitathomas
-  - awgreene
   - dtfranz
   - grokspawn
-  - jmprusi
   - joelanford
   - kevinrizza
   - m1kola
