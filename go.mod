@@ -8,7 +8,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/go-logr/logr v1.4.2
-	github.com/google/go-containerregistry v0.19.1
+	github.com/google/go-containerregistry v0.19.2
 	github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20240505154900-ff385a972813
 	github.com/google/go-containerregistry/pkg/authn/kubernetes v0.0.0-20240505154900-ff385a972813
 	github.com/gorilla/handlers v1.5.2
@@ -18,12 +18,12 @@ require (
 	github.com/operator-framework/api v0.24.0
 	github.com/operator-framework/helm-operator-plugins v0.2.2-0.20240520180534-f463c36fedf9
 	github.com/operator-framework/operator-registry v1.42.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/crypto v0.24.0
 	golang.org/x/sync v0.7.0
-	helm.sh/helm/v3 v3.15.1
+	helm.sh/helm/v3 v3.15.2
 	k8s.io/api v0.30.0
 	k8s.io/apiextensions-apiserver v0.30.0
 	k8s.io/apimachinery v0.30.0

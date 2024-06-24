@@ -42,9 +42,10 @@ import (
 
 	rukpakv1alpha2 "github.com/operator-framework/rukpak/api/v1alpha2"
 	"github.com/operator-framework/rukpak/internal/controllers/bundledeployment"
-	"github.com/operator-framework/rukpak/internal/provisioner/helm"
 	"github.com/operator-framework/rukpak/internal/version"
 	"github.com/operator-framework/rukpak/pkg/finalizer"
+	"github.com/operator-framework/rukpak/pkg/handler"
+	"github.com/operator-framework/rukpak/pkg/provisioner/helm"
 	"github.com/operator-framework/rukpak/pkg/source"
 	"github.com/operator-framework/rukpak/pkg/storage"
 	"github.com/operator-framework/rukpak/pkg/util"
@@ -188,7 +189,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	unpacker, err := source.NewDefaultUnpacker(mgr, systemNamespace, unpackCacheDir, rootCAs)
+	unpacker, err := source.NewDefaultUnpacker(mgr, systemNamespace, unpackCacheDir)
 	if err != nil {
 		setupLog.Error(err, "unable to setup bundle unpacker")
 		os.Exit(1)
@@ -232,7 +233,7 @@ func main() {
 	if err := bundledeployment.SetupWithManager(mgr, systemNamespace, append(
 		commonBDProvisionerOptions,
 		bundledeployment.WithProvisionerID(helm.ProvisionerID),
-		bundledeployment.WithHandler(bundledeployment.HandlerFunc(helm.HandleBundleDeployment)),
+		bundledeployment.WithHandler(handler.HandlerFunc(helm.HandleBundleDeployment)),
 	)...); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", rukpakv1alpha2.BundleDeploymentKind, "provisionerID", helm.ProvisionerID)
 		os.Exit(1)

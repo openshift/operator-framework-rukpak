@@ -1,4 +1,4 @@
-expectedMergeBase: ac1802e9c1e8a9837a596849e4ea1032c954da9b
+expectedMergeBase: e1d8b0e32344459dca3840fc7c26b05a69729e78
 upstreamBranch: main
 upstreamOrg: operator-framework
 upstreamRepo: rukpak
