@@ -6,7 +6,6 @@ aliases:
   - kevinrizza
   - oceanc80
   - perdasilva
-  - m1kola
 
   # contributors who can review/lgtm any PRs in the repo
   rukpak-reviewers:
@@ -16,7 +15,6 @@ aliases:
   - grokspawn
   - joelanford
   - kevinrizza
-  - m1kola
   - oceanc80
   - perdasilva
   - tmshort
