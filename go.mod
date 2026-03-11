@@ -1,6 +1,6 @@
 module github.com/operator-framework/rukpak
 
-go 1.19
+go 1.24.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1
@@ -16,8 +16,8 @@ require (
 	github.com/operator-framework/helm-operator-plugins v0.0.10
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/crypto v0.17.0
-	golang.org/x/sync v0.3.0
+	golang.org/x/crypto v0.43.0
+	golang.org/x/sync v0.17.0
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	helm.sh/helm/v3 v3.9.0
 	k8s.io/api v0.25.15
@@ -154,14 +154,14 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.19.1 // indirect
-	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/mod v0.28.0 // indirect
+	golang.org/x/net v0.45.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/term v0.36.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
-	golang.org/x/tools v0.13.0 // indirect
+	golang.org/x/tools v0.37.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220502173005-c8bf987b8c21 // indirect
