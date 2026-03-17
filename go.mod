@@ -222,4 +222,4 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
 
-replace golang.org/x/crypto => github.com/openshift/golang-crypto v0.33.1-0.20260212164730-3e9ce6e0b8f5
+replace golang.org/x/crypto => github.com/openshift/golang-crypto v0.24.1-0.20260224185142-c13412e85e45
